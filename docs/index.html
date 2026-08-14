@@ -246,7 +246,7 @@
     <!-- ── Hero figure ────────────────────────────────────────────── -->
     <section class="card span-3">
       <figure class="fig">
-        <img src="figures/hero.svg" alt="Trend with 1 and 2 sigma bands over a scatter of points" />
+        <img data-fig="hero" src="figures/en/hero.svg" alt="Trend with 1 and 2 sigma bands over a scatter of points" />
         <figcaption>
           <span class="l-en">A quadratic trend with a band whose width grows exponentially with x.
             The dashed green curves are the width the data were actually generated from; the
@@ -323,7 +323,7 @@ plt.show()</code></pre>
           converge simplement vers la largeur réelle de la population.</p>
       </div>
       <figure class="fig">
-        <img src="figures/band_vs_error.svg" alt="Left: both bands on one sample. Right: their behaviour with sample size." />
+        <img data-fig="band_vs_error" src="figures/en/band_vs_error.svg" loading="lazy" alt="Left: both bands on one sample. Right: their behaviour with sample size." />
         <figcaption>
           <span class="l-en">Left: both bands drawn on the same 400 points. The orange strip is
             the uncertainty on the curve, the blue band is the spread of the points. Right:
@@ -459,7 +459,7 @@ plt.show()</code></pre>
         gagne en souplesse ; d'une rangée à l'autre, c'est l'enveloppe. La courbe verte
         pointillée est la tendance vraie.</p>
       <figure class="fig">
-        <img src="figures/orders.svg" alt="Grid of fits for six combinations of the two polynomial degrees" />
+        <img data-fig="orders" src="figures/en/orders.svg" loading="lazy" alt="Grid of fits for six combinations of the two polynomial degrees" />
         <figcaption>
           <span class="l-en">BIC is quoted on each panel, lower being better. It picks
             order_mean = 2 and order_width = 1, which is exactly how the data were generated.
@@ -523,7 +523,7 @@ plot_diagnostics(fit, x, y)</code></pre>
     <!-- ── Underfit width ─────────────────────────────────────────── -->
     <section class="card span-3">
       <figure class="fig">
-        <img src="figures/underfit_width.svg" alt="Standardised residuals for a too-rigid and a correct width polynomial" />
+        <img data-fig="underfit_width" src="figures/en/underfit_width.svg" loading="lazy" alt="Standardised residuals for a too-rigid and a correct width polynomial" />
         <figcaption>
           <span class="l-en">The funnel, made concrete. Left: the width forced to be constant, on
             data whose scatter really does grow. The band swallows 80% of the points where it
@@ -540,7 +540,7 @@ plot_diagnostics(fit, x, y)</code></pre>
 
     <section class="card span-3">
       <figure class="fig">
-        <img src="figures/diagnostics.svg" alt="Four diagnostic panels: residuals, distribution, QQ plot, coverage" />
+        <img data-fig="diagnostics" src="figures/en/diagnostics.svg" loading="lazy" alt="Four diagnostic panels: residuals, distribution, QQ plot, coverage" />
         <figcaption>
           <span class="l-en">The four panels of <code>plot_diagnostics</code>: standardised
             residuals against x, their distribution against a unit Gaussian, a
@@ -567,7 +567,7 @@ plot_diagnostics(fit, x, y)</code></pre>
         interne sur log10(y) tout en renvoyant les résultats dans les unités de y, de sorte que
         rien en aval n'a besoin de connaître la transformation.</p>
       <figure class="fig">
-        <img src="figures/logspace.svg" alt="The same data fitted in linear and in log space" />
+        <img data-fig="logspace" src="figures/en/logspace.svg" loading="lazy" alt="The same data fitted in linear and in log space" />
         <figcaption>
           <span class="l-en">The same 400 points, fitted both ways. In linear space the band dips
             below zero over a third of the x range, which is impossible for a positive quantity,
@@ -604,7 +604,7 @@ plot_diagnostics(fit, x, y)</code></pre>
         valeurs de 3 à 5 sont très résistantes ; des valeurs plus grandes tendent vers le cas
         gaussien.</p>
       <figure class="fig">
-        <img src="figures/robust.svg" alt="Gaussian versus Student-t fit on a contaminated sample" />
+        <img data-fig="robust" src="figures/en/robust.svg" loading="lazy" alt="Gaussian versus Student-t fit on a contaminated sample" />
         <figcaption>
           <span class="l-en">600 points, 9% of them drawn from a component six times broader. The
             true width of the clean component is 0.60. The Gaussian fit returns 1.33, more than
@@ -628,7 +628,7 @@ plot_diagnostics(fit, x, y)</code></pre>
         part intrinsèque que vous cherchez à décrire. Passez <code>yerr</code> et l'ajustement
         les sépare au sein de la vraisemblance.</p>
       <figure class="fig">
-        <img src="figures/yerr.svg" alt="Fit with and without measurement errors supplied" />
+        <img data-fig="yerr" src="figures/en/yerr.svg" loading="lazy" alt="Fit with and without measurement errors supplied" />
         <figcaption>
           <span class="l-en">400 points whose error bars grow with x, on top of a constant
             intrinsic scatter of 0.45. Ignoring the error bars gives a band of 1.13, which is
@@ -645,7 +645,7 @@ plot_diagnostics(fit, x, y)</code></pre>
     <section class="card span-3">
       <h2><span class="l-en">Compared to binning</span><span class="l-fr">Comparaison avec le binning</span></h2>
       <figure class="fig">
-        <img src="figures/bins_vs_polyband.svg" alt="Binned mean and standard deviation versus a polyband fit" />
+        <img data-fig="bins_vs_polyband" src="figures/en/bins_vs_polyband.svg" loading="lazy" alt="Binned mean and standard deviation versus a polyband fit" />
         <figcaption>
           <span class="l-en">The same 220 points. Left: mean and standard deviation in ten bins of
             width 1. The result is jumpy, undefined between bin centres, and the last bin holds
@@ -794,6 +794,13 @@ plot_polyband(robust_fit, ax=ax, show_points=False,
         lang = lang === "fr" ? "fr" : "en";
         document.body.dataset.lang = lang;
         document.documentElement.lang = lang;
+        // Figures exist in both languages; swap the source, do not load both.
+        var figures = document.querySelectorAll("img[data-fig]");
+        for (var f = 0; f < figures.length; f++) {
+          figures[f].setAttribute(
+            "src", "figures/" + lang + "/" + figures[f].dataset.fig + ".svg"
+          );
+        }
         var buttons = document.querySelectorAll(".lang-toggle button");
         for (var i = 0; i < buttons.length; i++) {
           buttons[i].setAttribute(

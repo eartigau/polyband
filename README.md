@@ -9,7 +9,7 @@ polynomial chosen independently.
 Documentation and worked examples: **https://eartigau.github.io/polyband/**
 (bilingual, English and French)
 
-![polyband](docs/figures/hero.svg)
+![polyband](docs/figures/en/hero.svg)
 
 ## What problem this solves
 
@@ -98,7 +98,7 @@ plainly:
 | `fit.envelope(x)` | where the **points** lie | converges to the true spread |
 | `fit.trend_band(x)` | where the **curve** lies | shrinks like `1/sqrt(N)` |
 
-![band versus trend error](docs/figures/band_vs_error.svg)
+![band versus trend error](docs/figures/en/band_vs_error.svg)
 
 If you are asking "is this object unusual compared to the population?", you
 want the first one. If you are asking "how well do I know the mean relation?",
@@ -133,11 +133,11 @@ low; a wave means `order_mean` is.
 
 Runnable scripts in [`examples/`](examples/):
 
-1. `01_quickstart.py` — fit, check coverage, plot
-2. `02_choosing_orders.py` — BIC selection and residual diagnostics
-3. `03_robust_and_errors.py` — outliers with `nu`, measurement errors with `yerr`
-4. `04_log_space.py` — quantities spanning orders of magnitude
-5. `05_matplotlib_integration.py` — styling, overlays, subplots, extrapolation
+1. `01_quickstart.py`: fit, check coverage, plot
+2. `02_choosing_orders.py`: BIC selection and residual diagnostics
+3. `03_robust_and_errors.py`: outliers with `nu`, measurement errors with `yerr`
+4. `04_log_space.py`: quantities spanning orders of magnitude
+5. `05_matplotlib_integration.py`: styling, overlays, subplots, extrapolation
 
 All of them run on synthetic data from `polyband.datasets`, which ships the
 ground truth alongside each sample so a fitted band can be compared against
