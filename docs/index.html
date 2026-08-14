@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>polyband</title>
+<meta name="description" content="Fit a polynomial trend and a polynomial-width band to a scatter plot. A Python package." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ── Page-specific additions on top of the shared theme ───────────── */
+
+  /* Bilingual content: both languages live in the markup, one is hidden. */
+  body[data-lang="en"] .l-fr,
+  body[data-lang="fr"] .l-en { display: none !important; }
+
+  .lang-toggle {
+    display: inline-flex;
+    gap: 4px;
+    margin-right: 10px;
+  }
+
+  .lang-toggle button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.06);
+    color: #dce8f8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .lang-toggle button:hover { border-color: #fff; color: #fff; }
+
+  .lang-toggle button[aria-pressed="true"] {
+    background: #fff;
+    border-color: #fff;
+    color: #10233d;
+  }
+
+  .banner-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .site-banner-inner .home-link { margin-left: 0; }
+
+  /* Prose */
+  .card p { margin: 0 0 10px; color: #d3dff2; line-height: 1.55; }
+  .card p:last-child { margin-bottom: 0; }
+  .card p.hint { color: var(--muted); }
+  code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.86em;
+    background: rgba(4, 8, 16, 0.75);
+    border: 1px solid rgba(130, 180, 240, 0.18);
+    border-radius: 5px;
+    padding: 1px 5px;
+    color: #cfe6ff;
+  }
+  .codeblock code { background: none; border: none; padding: 0; color: inherit; }
+
+  /* Long URLs would otherwise scroll out of sight in a narrow card. */
+  .codeblock.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .kicker {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  /* Model equation */
+  .model-eq {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.95rem;
+    line-height: 1.9;
+    text-align: center;
+    padding: 14px 10px;
+    margin: 4px 0 12px;
+    border-radius: 10px;
+    background: rgba(4, 8, 16, 0.75);
+    border: 1px solid rgba(130, 180, 240, 0.22);
+    color: #e6f2ff;
+  }
+  .model-eq .dim { color: var(--muted); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+    margin: 4px 0 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  td:first-child { white-space: nowrap; }
+  td code { white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .table-scroll { overflow-x: auto; }
+
+  /* Figures */
+  figure.fig {
+    margin: 0;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(3, 8, 15, 0.8);
+    overflow: hidden;
+  }
+  figure.fig img { cursor: zoom-in; }
+  figure.fig figcaption {
+    padding: 10px 14px 12px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    border-top: 1px solid var(--line);
+  }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    padding: 2px 0 2px 14px;
+    margin: 12px 0 0;
+  }
+
+  .footer p { margin: 4px 0; }
+</style>
+</head>
+<body data-lang="en">
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <div class="site-banner">
+    <div class="site-banner-inner">
+      <div class="site-banner-text">
+        <h2>polyband</h2>
+        <p>
+          <span class="l-en">A polynomial trend with a polynomial-width band &middot; Python package</span>
+          <span class="l-fr">Une tendance polynomiale avec une enveloppe de largeur polynomiale &middot; module Python</span>
+        </p>
+      </div>
+      <div class="banner-actions">
+        <div class="lang-toggle" role="group" aria-label="Language / Langue">
+          <button type="button" id="btn-en" data-set-lang="en" aria-pressed="true">EN</button>
+          <button type="button" id="btn-fr" data-set-lang="fr" aria-pressed="false">FR</button>
+        </div>
+        <a href="https://eartigau.github.io/" class="home-link">&larr; <span class="l-en">Home</span><span class="l-fr">Accueil</span></a>
+      </div>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="eyebrow"><span class="l-en">Statistics toolkit</span><span class="l-fr">Boîte à outils statistique</span></p>
+    <h1>polyband</h1>
+    <p class="subtitle">
+      <span class="l-en">Fit the scatter, not just the mean. A smooth trend through a cloud of
+        points, and a smooth description of how thick that cloud is, with the degree
+        of each polynomial chosen independently.</span>
+      <span class="l-fr">Ajustez la dispersion, pas seulement la moyenne. Une tendance lisse à
+        travers un nuage de points, et une description lisse de l'épaisseur de ce
+        nuage, avec le degré de chaque polynôme choisi indépendamment.</span>
+    </p>
+  </header>
+
+  <main class="layout">
+
+    <!-- ── Intro ──────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">The problem</span><span class="l-fr">Le problème</span></h2>
+      <div class="l-en">
+        <p>You have a cloud of points and you want two things from it: where the middle
+          of the cloud goes, and how thick the cloud is. The second question is usually
+          the interesting one, because it is what lets you say whether a particular
+          object is unusual. The usual approaches each fall short.</p>
+        <ul class="feature-list">
+          <li><strong>Binning in x</strong> gives a jumpy answer that depends on the bin width,
+            says nothing between bin centres, and wastes points near the edges.</li>
+          <li><strong>A polynomial fit plus its covariance matrix</strong> answers a different
+            question altogether. The covariance describes how well the <em>fitted curve</em> is
+            pinned down, which improves as you collect more data. The thickness of the
+            cloud does not improve; it is a property of the population.</li>
+          <li><strong>A polynomial fit plus a single global RMS</strong> works only if the scatter
+            is the same everywhere, which is usually the first assumption to fail.</li>
+        </ul>
+        <p><code>polyband</code> fits a trend and a width at the same time, each as its own
+          polynomial, by maximum likelihood. This page explains the model, shows what each
+          option does, and gives runnable examples. Everything shown here is generated from
+          synthetic data that ships with the package, so every figure can be reproduced with
+          one command and every fitted band can be compared against the width it was actually
+          drawn from.</p>
+      </div>
+      <div class="l-fr">
+        <p>Vous avez un nuage de points et vous voulez en tirer deux choses : où passe le
+          milieu du nuage, et quelle est son épaisseur. La deuxième question est
+          généralement la plus intéressante, puisque c'est elle qui permet de dire si un
+          objet donné est atypique. Les approches habituelles sont toutes insatisfaisantes.</p>
+        <ul class="feature-list">
+          <li><strong>Le binning en x</strong> donne une réponse en dents de scie qui dépend de la
+            largeur des intervalles, ne dit rien entre les centres des bins, et gaspille les
+            points près des bords.</li>
+          <li><strong>Un ajustement polynomial et sa matrice de covariance</strong> répondent à une
+            tout autre question. La covariance décrit la précision de la <em>courbe ajustée</em>,
+            qui s'améliore à mesure que les données s'accumulent. L'épaisseur du nuage, elle,
+            ne s'améliore pas : c'est une propriété de la population.</li>
+          <li><strong>Un ajustement polynomial et un seul écart-type global</strong> ne fonctionnent
+            que si la dispersion est identique partout, ce qui est habituellement la
+            première hypothèse à tomber.</li>
+        </ul>
+        <p><code>polyband</code> ajuste simultanément une tendance et une largeur, chacune sous
+          forme de polynôme, par maximum de vraisemblance. Cette page explique le modèle,
+          montre l'effet de chaque option et donne des exemples exécutables. Tout ce qui est
+          présenté ici provient de données synthétiques livrées avec le module : chaque figure
+          se reproduit avec une seule commande, et chaque enveloppe ajustée peut être comparée
+          à la largeur dont elle a réellement été tirée.</p>
+      </div>
+    </section>
+
+    <!-- ── Hero figure ────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <figure class="fig">
+        <img src="figures/hero.svg" alt="Trend with 1 and 2 sigma bands over a scatter of points" />
+        <figcaption>
+          <span class="l-en">A quadratic trend with a band whose width grows exponentially with x.
+            The dashed green curves are the width the data were actually generated from; the
+            fit recovers it without having been told anything about it. Points: 450 synthetic
+            measurements.</span>
+          <span class="l-fr">Une tendance quadratique avec une enveloppe dont la largeur croît
+            exponentiellement avec x. Les courbes vertes pointillées sont la largeur ayant
+            réellement servi à générer les données ; l'ajustement la retrouve sans en avoir
+            reçu la moindre indication. Points : 450 mesures synthétiques.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Install ────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="l-en">Install</span><span class="l-fr">Installation</span></h2>
+      <p class="l-en">One command, straight from GitHub. Python 3.9 or newer, with numpy and
+        scipy; matplotlib is only needed for the plotting helpers.</p>
+      <p class="l-fr">Une seule commande, directement depuis GitHub. Python 3.9 ou plus récent,
+        avec numpy et scipy ; matplotlib n'est requis que pour les fonctions de tracé.</p>
+      <pre class="codeblock wrap"><code>pip install git+https://github.com/eartigau/polyband.git</code></pre>
+      <p class="hint l-en">To work on the code itself, clone it and install in editable mode
+        with the test dependencies:</p>
+      <p class="hint l-fr">Pour travailler sur le code lui-même, clonez le dépôt et installez-le
+        en mode éditable avec les dépendances de test :</p>
+      <pre class="codeblock wrap"><code>git clone https://github.com/eartigau/polyband.git
+cd polyband
+pip install -e ".[dev]"
+pytest</code></pre>
+    </section>
+
+    <!-- ── Quick start ────────────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">Quick start</span><span class="l-fr">Démarrage rapide</span></h2>
+      <p class="l-en"><code>order_mean</code> is the degree of the trend, <code>order_width</code>
+        the degree of <code>ln(sigma)</code>. They are independent, which is the whole point:
+        a curved trend with a constant-width band is an ordinary combination, and so is a
+        straight trend whose scatter grows.</p>
+      <p class="l-fr"><code>order_mean</code> est le degré de la tendance, <code>order_width</code>
+        celui de <code>ln(sigma)</code>. Ils sont indépendants, et c'est là tout l'intérêt :
+        une tendance courbe avec une enveloppe de largeur constante est une combinaison
+        parfaitement ordinaire, tout comme une tendance droite dont la dispersion augmente.</p>
+      <pre class="codeblock"><code>import matplotlib.pyplot as plt
+from polyband import fit_polyband, plot_polyband
+
+fit = fit_polyband(x, y, order_mean=2, order_width=1)
+
+print(fit.summary())
+print(fit.predict(5.0))       # trend at x = 5
+print(fit.scatter(5.0))       # half-width of the 1-sigma band at x = 5
+print(fit.zscore(5.0, 12.3))  # how unusual a point is, in sigma
+
+art = plot_polyband(fit, x, y, nsigma=(1, 2))
+art.ax.legend(handles=art.legend_handles)
+plt.show()</code></pre>
+    </section>
+
+    <!-- ── Band vs trend error ────────────────────────────────────── -->
+    <section class="card span-3">
+      <p class="kicker"><span class="l-en">The key distinction</span><span class="l-fr">La distinction essentielle</span></p>
+      <h2><span class="l-en">The band is not the uncertainty on the trend</span><span class="l-fr">L'enveloppe n'est pas l'incertitude sur la tendance</span></h2>
+      <div class="l-en">
+        <p>These are two different quantities, and mixing them up is the single most common
+          mistake in this kind of plot. The uncertainty on the trend comes from the
+          coefficient covariance matrix and shrinks like 1/&radic;N. The band describes where
+          the points are, and does not shrink at all: with more data it simply converges on
+          the true population width.</p>
+      </div>
+      <div class="l-fr">
+        <p>Ce sont deux quantités distinctes, et les confondre est l'erreur la plus fréquente
+          dans ce genre de figure. L'incertitude sur la tendance provient de la matrice de
+          covariance des coefficients et décroît en 1/&radic;N. L'enveloppe décrit où se
+          trouvent les points, et ne rétrécit pas du tout : avec davantage de données, elle
+          converge simplement vers la largeur réelle de la population.</p>
+      </div>
+      <figure class="fig">
+        <img src="figures/band_vs_error.svg" alt="Left: both bands on one sample. Right: their behaviour with sample size." />
+        <figcaption>
+          <span class="l-en">Left: both bands drawn on the same 400 points. The orange strip is
+            the uncertainty on the curve, the blue band is the spread of the points. Right:
+            the same two quantities measured at x = 5 for samples from 30 to 20 000 points.
+            The band sits on the true width across three decades; the trend error follows
+            1/&radic;N exactly.</span>
+          <span class="l-fr">À gauche : les deux enveloppes tracées sur les mêmes 400 points. La
+            bande orange est l'incertitude sur la courbe, la bande bleue la dispersion des
+            points. À droite : ces deux quantités mesurées à x = 5 pour des échantillons de 30
+            à 20 000 points. L'enveloppe reste sur la largeur vraie à travers trois décades ;
+            l'erreur sur la tendance suit exactement 1/&radic;N.</span>
+        </figcaption>
+      </figure>
+      <div class="table-scroll callout">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th><span class="l-en">Describes</span><span class="l-fr">Décrit</span></th>
+              <th><span class="l-en">As N grows</span><span class="l-fr">Quand N augmente</span></th>
+              <th><span class="l-en">Answers</span><span class="l-fr">Répond à</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>fit.envelope(x)</code></td>
+              <td><span class="l-en">where the <strong>points</strong> lie</span><span class="l-fr">où se trouvent les <strong>points</strong></span></td>
+              <td><span class="l-en">converges to the true spread</span><span class="l-fr">converge vers la dispersion vraie</span></td>
+              <td><span class="l-en">is this object unusual?</span><span class="l-fr">cet objet est-il atypique ?</span></td>
+            </tr>
+            <tr>
+              <td><code>fit.trend_band(x)</code></td>
+              <td><span class="l-en">where the <strong>curve</strong> lies</span><span class="l-fr">où se trouve la <strong>courbe</strong></span></td>
+              <td><span class="l-en">shrinks like 1/&radic;N</span><span class="l-fr">décroît en 1/&radic;N</span></td>
+              <td><span class="l-en">how well do I know the mean relation?</span><span class="l-fr">quelle est la précision de la relation moyenne ?</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── The model ──────────────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">The model</span><span class="l-fr">Le modèle</span></h2>
+      <div class="model-eq">
+        y = P<sub>mean</sub>(x) + noise, <span class="dim">noise ~ N(0, s(x))</span><br>
+        ln s(x) = P<sub>width</sub>(x)
+      </div>
+      <div class="l-en">
+        <p>Both polynomials are fitted at once by maximum likelihood, not in two passes. That
+          matters: the trend is then weighted by the local scatter, so points in the noisy part
+          of the x range pull less on the mean than points in the quiet part.</p>
+        <p>Three design choices are worth knowing about.</p>
+        <ul class="feature-list">
+          <li><strong>The width polynomial describes ln(sigma)</strong>, not sigma or sigma squared.
+            Fitting the squared residuals with an ordinary polynomial lets the variance go
+            negative, which then has to be clipped, and it weights outliers by their fourth
+            power. Working in ln(sigma) makes positivity automatic.</li>
+          <li><strong>x is rescaled onto [-1, 1] internally.</strong> A Vandermonde matrix built from
+            raw values in the thousands is hopelessly ill-conditioned by degree 3.</li>
+          <li><strong>Maximum-likelihood widths are biased low</strong> by roughly &radic;((N-p)/N), so
+            the fit corrects for it by default. This is the same correction as dividing by
+            N-1 rather than N in a plain standard deviation.</li>
+        </ul>
+      </div>
+      <div class="l-fr">
+        <p>Les deux polynômes sont ajustés simultanément par maximum de vraisemblance, et non
+          en deux passes. Cela compte : la tendance est alors pondérée par la dispersion
+          locale, de sorte que les points situés dans la portion bruitée de l'axe des x
+          influencent moins la moyenne que ceux de la portion calme.</p>
+        <p>Trois choix de conception méritent d'être connus.</p>
+        <ul class="feature-list">
+          <li><strong>Le polynôme de largeur décrit ln(sigma)</strong>, et non sigma ou sigma au carré.
+            Ajuster les résidus au carré avec un polynôme ordinaire laisse la variance devenir
+            négative, ce qu'il faut ensuite tronquer, et donne aux points aberrants un poids en
+            puissance quatrième. Travailler en ln(sigma) rend la positivité automatique.</li>
+          <li><strong>x est ramené sur [-1, 1] en interne.</strong> Une matrice de Vandermonde
+            construite à partir de valeurs brutes de l'ordre du millier est irrémédiablement
+            mal conditionnée dès le degré 3.</li>
+          <li><strong>Les largeurs par maximum de vraisemblance sont biaisées vers le bas</strong>
+            d'environ &radic;((N-p)/N) ; la correction est appliquée par défaut. C'est la même
+            correction que diviser par N-1 plutôt que par N dans un écart-type ordinaire.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="l-en">Does it work?</span><span class="l-fr">Est-ce que ça marche ?</span></h2>
+      <p class="l-en">Coverage of the 450-point fit shown at the top of this page, against
+        what a correctly specified band should give:</p>
+      <p class="l-fr">Couverture de l'ajustement à 450 points montré en haut de cette page,
+        comparée à ce que devrait donner une enveloppe correctement spécifiée :</p>
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="label"><span class="l-en">Inside 1&sigma;</span><span class="l-fr">Dans 1&sigma;</span></div>
+          <div class="value">69.3&thinsp;%</div>
+        </div>
+        <div class="stat">
+          <div class="label"><span class="l-en">Expected</span><span class="l-fr">Attendu</span></div>
+          <div class="value">68.3&thinsp;%</div>
+        </div>
+        <div class="stat">
+          <div class="label"><span class="l-en">Inside 2&sigma;</span><span class="l-fr">Dans 2&sigma;</span></div>
+          <div class="value">96.0&thinsp;%</div>
+        </div>
+        <div class="stat">
+          <div class="label"><span class="l-en">Expected</span><span class="l-fr">Attendu</span></div>
+          <div class="value">95.4&thinsp;%</div>
+        </div>
+        <div class="stat">
+          <div class="label"><span class="l-en">Inside 3&sigma;</span><span class="l-fr">Dans 3&sigma;</span></div>
+          <div class="value">99.8&thinsp;%</div>
+        </div>
+        <div class="stat">
+          <div class="label"><span class="l-en">Expected</span><span class="l-fr">Attendu</span></div>
+          <div class="value">99.7&thinsp;%</div>
+        </div>
+      </div>
+      <p class="hint l-en">Two lines to check it on your own data:</p>
+      <p class="hint l-fr">Deux lignes pour le vérifier sur vos propres données :</p>
+      <pre class="codeblock"><code>for k, obs, exp in fit.coverage(x, y):
+    print(k, obs, exp)</code></pre>
+    </section>
+
+    <!-- ── Orders ─────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">What the two degrees control</span><span class="l-fr">Ce que contrôlent les deux degrés</span></h2>
+      <p class="l-en">The same 350 points, fitted with every combination of a trend degree from
+        0 to 2 and a width degree of 0 or 1. Along a row the trend gets more flexible; between
+        rows the band does. The dashed green curve is the true trend.</p>
+      <p class="l-fr">Les mêmes 350 points, ajustés avec toutes les combinaisons d'un degré de
+        tendance de 0 à 2 et d'un degré de largeur de 0 ou 1. Sur une rangée, la tendance
+        gagne en souplesse ; d'une rangée à l'autre, c'est l'enveloppe. La courbe verte
+        pointillée est la tendance vraie.</p>
+      <figure class="fig">
+        <img src="figures/orders.svg" alt="Grid of fits for six combinations of the two polynomial degrees" />
+        <figcaption>
+          <span class="l-en">BIC is quoted on each panel, lower being better. It picks
+            order_mean = 2 and order_width = 1, which is exactly how the data were generated.
+            Note that the top row, with a constant-width band, is wrong in both directions at
+            once: too wide on the left, too narrow on the right.</span>
+          <span class="l-fr">Le BIC est indiqué sur chaque panneau, le plus bas étant le meilleur.
+            Il retient order_mean = 2 et order_width = 1, soit exactement la façon dont les
+            données ont été générées. Notez que la rangée du haut, avec une enveloppe de largeur
+            constante, se trompe dans les deux sens à la fois : trop large à gauche, trop
+            étroite à droite.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Choosing orders ────────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">Choosing the degrees</span><span class="l-fr">Choisir les degrés</span></h2>
+      <p class="l-en">If you have no reason to prefer particular degrees, let BIC scan them.
+        It penalises extra parameters more firmly than AIC, which is what you want here: the
+        failure mode to avoid is a width polynomial flexible enough to chase noise.</p>
+      <p class="l-fr">Si rien ne justifie un choix particulier de degrés, laissez le BIC les
+        balayer. Il pénalise les paramètres supplémentaires plus fermement que l'AIC, ce qui
+        est souhaitable ici : le mode de défaillance à éviter est un polynôme de largeur assez
+        souple pour épouser le bruit.</p>
+      <pre class="codeblock"><code>from polyband import select_orders
+
+fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2)
+print(fit.order_mean, fit.order_width)
+
+for order_mean, order_width, bic in table[:5]:
+    print(order_mean, order_width, bic)</code></pre>
+      <p class="callout l-en"><strong>Rule of thumb:</strong> treat a BIC difference below about 2
+        as a tie and keep the simpler model. An over-flexible width is not a harmless extra
+        degree of freedom; it produces a band that wiggles to chase noise and then misstates
+        how unusual any given point is.</p>
+      <p class="callout l-fr"><strong>Règle empirique :</strong> considérez un écart de BIC
+        inférieur à environ 2 comme une égalité et conservez le modèle le plus simple. Une
+        largeur trop souple n'est pas un degré de liberté anodin : elle produit une enveloppe
+        qui ondule pour suivre le bruit, et donne ensuite une mauvaise mesure du caractère
+        atypique de chaque point.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="l-en">Read the residuals</span><span class="l-fr">Lire les résidus</span></h2>
+      <p class="l-en">Standardised residuals, <code>(y - trend) / sigma(x)</code>, should look
+        like a structureless strip of constant width. Their shape tells you which degree is
+        wrong:</p>
+      <p class="l-fr">Les résidus standardisés, <code>(y - tendance) / sigma(x)</code>, doivent
+        ressembler à une bande sans structure et de largeur constante. Leur forme indique quel
+        degré est en cause :</p>
+      <ul class="feature-list">
+        <li><span class="l-en">a <strong>funnel</strong> means <code>order_width</code> is too low</span><span class="l-fr">un <strong>entonnoir</strong> signifie que <code>order_width</code> est trop bas</span></li>
+        <li><span class="l-en">a <strong>wave</strong> means <code>order_mean</code> is too low</span><span class="l-fr">une <strong>ondulation</strong> signifie que <code>order_mean</code> est trop bas</span></li>
+        <li><span class="l-en">heavy tails mean you want <code>nu</code></span><span class="l-fr">des queues lourdes signifient qu'il faut passer à <code>nu</code></span></li>
+      </ul>
+      <pre class="codeblock"><code>from polyband import plot_diagnostics
+
+plot_diagnostics(fit, x, y)</code></pre>
+    </section>
+
+    <!-- ── Underfit width ─────────────────────────────────────────── -->
+    <section class="card span-3">
+      <figure class="fig">
+        <img src="figures/underfit_width.svg" alt="Standardised residuals for a too-rigid and a correct width polynomial" />
+        <figcaption>
+          <span class="l-en">The funnel, made concrete. Left: the width forced to be constant, on
+            data whose scatter really does grow. The band swallows 80% of the points where it
+            should swallow 68%, and it is far too narrow at high x. Right: one extra degree
+            fixes it. This diagnostic costs nothing and catches the problem immediately.</span>
+          <span class="l-fr">L'entonnoir, concrètement. À gauche : la largeur forcée à rester
+            constante, sur des données dont la dispersion croît réellement. L'enveloppe
+            contient 80&nbsp;% des points là où elle devrait en contenir 68&nbsp;%, et elle est
+            bien trop étroite aux grands x. À droite : un degré de plus règle le problème. Ce
+            diagnostic ne coûte rien et détecte immédiatement le défaut.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="card span-3">
+      <figure class="fig">
+        <img src="figures/diagnostics.svg" alt="Four diagnostic panels: residuals, distribution, QQ plot, coverage" />
+        <figcaption>
+          <span class="l-en">The four panels of <code>plot_diagnostics</code>: standardised
+            residuals against x, their distribution against a unit Gaussian, a
+            quantile-quantile plot, and the coverage curve. A well specified band gives a
+            structureless first panel and a coverage curve on the diagonal.</span>
+          <span class="l-fr">Les quatre panneaux de <code>plot_diagnostics</code> : les résidus
+            standardisés en fonction de x, leur distribution comparée à une gaussienne réduite,
+            un diagramme quantile-quantile, et la courbe de couverture. Une enveloppe
+            correctement spécifiée donne un premier panneau sans structure et une courbe de
+            couverture sur la diagonale.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Log space ──────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Quantities that span orders of magnitude</span><span class="l-fr">Quantités s'étendant sur plusieurs ordres de grandeur</span></h2>
+      <p class="l-en">When the scatter is multiplicative rather than additive, y itself is the
+        wrong variable to fit. Pass <code>log_y=True</code> and polyband works on log10(y)
+        internally while handing results back in the units of y, so nothing downstream has to
+        know about the transform.</p>
+      <p class="l-fr">Quand la dispersion est multiplicative plutôt qu'additive, y n'est pas la
+        bonne variable à ajuster. Passez <code>log_y=True</code> et polyband travaille en
+        interne sur log10(y) tout en renvoyant les résultats dans les unités de y, de sorte que
+        rien en aval n'a besoin de connaître la transformation.</p>
+      <figure class="fig">
+        <img src="figures/logspace.svg" alt="The same data fitted in linear and in log space" />
+        <figcaption>
+          <span class="l-en">The same 400 points, fitted both ways. In linear space the band dips
+            below zero over a third of the x range, which is impossible for a positive quantity,
+            and the residuals are strongly skewed. In log space the band is a tidy strip and the
+            coverage is 69.5% at 1&sigma; against 68.3% expected.</span>
+          <span class="l-fr">Les mêmes 400 points, ajustés des deux façons. En espace linéaire,
+            l'enveloppe passe sous zéro sur un tiers de l'intervalle en x, ce qui est impossible
+            pour une quantité positive, et les résidus sont fortement asymétriques. En espace
+            logarithmique, l'enveloppe est une bande nette et la couverture atteint 69,5&nbsp;% à
+            1&sigma; contre 68,3&nbsp;% attendu.</span>
+        </figcaption>
+      </figure>
+      <p class="hint l-en">The one place the transform stays visible is the width:
+        <code>fit.scatter()</code> returns dex, because a band symmetric in log space is
+        asymmetric in linear space and there is no single number to report otherwise. Use
+        <code>fit.envelope()</code> for the edges, which does come back in the units of y.</p>
+      <p class="hint l-fr">Le seul endroit où la transformation reste visible est la largeur :
+        <code>fit.scatter()</code> renvoie des dex, car une enveloppe symétrique en espace
+        logarithmique est asymétrique en espace linéaire et aucun nombre unique ne peut la
+        décrire autrement. Utilisez <code>fit.envelope()</code> pour les bords, qui sont bien
+        renvoyés dans les unités de y.</p>
+    </section>
+
+    <!-- ── Robust ─────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Samples with outliers</span><span class="l-fr">Échantillons avec valeurs aberrantes</span></h2>
+      <p class="l-en">Under a Gaussian likelihood, a handful of far-flung points drags the band
+        open across the whole x range. Setting <code>nu</code> switches to a Student-t
+        likelihood, which stops letting those few points set the width. Values of 3 to 5 are
+        strongly resistant; larger values approach the Gaussian case.</p>
+      <p class="l-fr">Sous une vraisemblance gaussienne, une poignée de points très éloignés
+        élargit l'enveloppe sur tout l'intervalle en x. Définir <code>nu</code> bascule vers une
+        vraisemblance de Student, qui empêche ces quelques points de dicter la largeur. Des
+        valeurs de 3 à 5 sont très résistantes ; des valeurs plus grandes tendent vers le cas
+        gaussien.</p>
+      <figure class="fig">
+        <img src="figures/robust.svg" alt="Gaussian versus Student-t fit on a contaminated sample" />
+        <figcaption>
+          <span class="l-en">600 points, 9% of them drawn from a component six times broader. The
+            true width of the clean component is 0.60. The Gaussian fit returns 1.33, more than
+            twice too wide; with nu = 4 the fit returns 0.64.</span>
+          <span class="l-fr">600 points, dont 9&nbsp;% tirés d'une composante six fois plus large.
+            La largeur vraie de la composante propre est 0,60. L'ajustement gaussien renvoie
+            1,33, soit plus du double ; avec nu = 4, l'ajustement renvoie 0,64.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── yerr ───────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Points with measurement errors</span><span class="l-fr">Points avec barres d'erreur</span></h2>
+      <p class="l-en">If your points carry uncertainties, the observed spread is the intrinsic
+        spread and the measurement noise added in quadrature. Usually the intrinsic part is the
+        one you want to describe. Pass <code>yerr</code> and the fit separates them inside the
+        likelihood.</p>
+      <p class="l-fr">Si vos points portent des incertitudes, la dispersion observée est la somme
+        quadratique de la dispersion intrinsèque et du bruit de mesure. C'est généralement la
+        part intrinsèque que vous cherchez à décrire. Passez <code>yerr</code> et l'ajustement
+        les sépare au sein de la vraisemblance.</p>
+      <figure class="fig">
+        <img src="figures/yerr.svg" alt="Fit with and without measurement errors supplied" />
+        <figcaption>
+          <span class="l-en">400 points whose error bars grow with x, on top of a constant
+            intrinsic scatter of 0.45. Ignoring the error bars gives a band of 1.13, which is
+            just the observed spread. Supplying them recovers 0.46.</span>
+          <span class="l-fr">400 points dont les barres d'erreur croissent avec x, superposées à
+            une dispersion intrinsèque constante de 0,45. Ignorer les barres d'erreur donne une
+            enveloppe de 1,13, qui n'est que la dispersion observée. Les fournir permet de
+            retrouver 0,46.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Bins ───────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Compared to binning</span><span class="l-fr">Comparaison avec le binning</span></h2>
+      <figure class="fig">
+        <img src="figures/bins_vs_polyband.svg" alt="Binned mean and standard deviation versus a polyband fit" />
+        <figcaption>
+          <span class="l-en">The same 220 points. Left: mean and standard deviation in ten bins of
+            width 1. The result is jumpy, undefined between bin centres, and the last bin holds
+            too few points to estimate a width from. Right: the continuous fit, which uses every
+            point at every x and recovers the true width (dashed).</span>
+          <span class="l-fr">Les mêmes 220 points. À gauche : moyenne et écart-type dans dix
+            intervalles de largeur 1. Le résultat est en dents de scie, indéfini entre les
+            centres, et le dernier intervalle contient trop peu de points pour en estimer une
+            largeur. À droite : l'ajustement continu, qui utilise tous les points à chaque x et
+            retrouve la largeur vraie (pointillés).</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Matplotlib ─────────────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">Matplotlib integration</span><span class="l-fr">Intégration matplotlib</span></h2>
+      <p class="l-en"><code>plot_polyband</code> draws on the axis you give it, never touches
+        figure-level state, never calls <code>show()</code> or <code>legend()</code> by itself,
+        and returns every artist it created. That makes it safe to call twice on the same axis,
+        which is how you overlay two fits.</p>
+      <p class="l-fr"><code>plot_polyband</code> dessine sur l'axe que vous lui donnez, ne touche
+        jamais à l'état global de la figure, n'appelle jamais <code>show()</code> ni
+        <code>legend()</code> de lui-même, et renvoie tous les objets graphiques qu'il a créés.
+        On peut donc l'appeler deux fois sur le même axe, ce qui est la façon de superposer deux
+        ajustements.</p>
+      <pre class="codeblock"><code>art = plot_polyband(
+    fit, x, y, ax=ax,
+    nsigma=(1, 2, 3),                     # nested bands
+    color="#c77dff",
+    point_kw=dict(s=14, marker="^"),      # forwarded to ax.scatter
+    trend_kw=dict(linewidth=3.0),         # forwarded to ax.plot
+    band_kw=dict(hatch="//"),             # forwarded to ax.fill_between
+    show_trend_error=True,
+)
+
+art.trend.set_zorder(10)                  # restyle afterwards
+ax.legend(handles=art.legend_handles)
+
+# Overlay a second fit on the same axis
+plot_polyband(robust_fit, ax=ax, show_points=False,
+              color="tab:green", label_prefix="Student-t: ")</code></pre>
+      <p class="hint l-en">Curves stop exactly where the data stop. A polynomial band has no
+        business being drawn where nothing constrains it, so <code>extrapolate</code> defaults
+        to 0 and any extension is something you have to ask for deliberately.</p>
+      <p class="hint l-fr">Les courbes s'arrêtent exactement là où s'arrêtent les données. Une
+        enveloppe polynomiale n'a rien à faire là où rien ne la contraint : <code>extrapolate</code>
+        vaut 0 par défaut, et toute extension doit être demandée délibérément.</p>
+    </section>
+
+    <!-- ── Examples ───────────────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="l-en">Runnable examples</span><span class="l-fr">Exemples exécutables</span></h2>
+      <p class="l-en">Five scripts in <code>examples/</code>, each self-contained and running on
+        synthetic data shipped with the package:</p>
+      <p class="l-fr">Cinq scripts dans <code>examples/</code>, chacun autonome et fonctionnant sur
+        des données synthétiques livrées avec le module :</p>
+      <ul class="feature-list">
+        <li><code>01_quickstart.py</code><br><span class="hint l-en">fit, check coverage, plot</span><span class="hint l-fr">ajuster, vérifier la couverture, tracer</span></li>
+        <li><code>02_choosing_orders.py</code><br><span class="hint l-en">BIC selection and residual diagnostics</span><span class="hint l-fr">sélection par BIC et diagnostics des résidus</span></li>
+        <li><code>03_robust_and_errors.py</code><br><span class="hint l-en">outliers and measurement errors</span><span class="hint l-fr">valeurs aberrantes et barres d'erreur</span></li>
+        <li><code>04_log_space.py</code><br><span class="hint l-en">quantities spanning decades</span><span class="hint l-fr">quantités s'étendant sur des décades</span></li>
+        <li><code>05_matplotlib_integration.py</code><br><span class="hint l-en">styling, overlays, extrapolation</span><span class="hint l-fr">style, superpositions, extrapolation</span></li>
+      </ul>
+      <p class="hint l-en">The figures on this page come from
+        <code>docs/make_figures.py</code>, which regenerates all of them in one run.</p>
+      <p class="hint l-fr">Les figures de cette page proviennent de
+        <code>docs/make_figures.py</code>, qui les régénère toutes en une seule exécution.</p>
+    </section>
+
+    <!-- ── API ────────────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Reference</span><span class="l-fr">Référence</span></h2>
+      <p class="kicker" style="margin-top:6px"><span class="l-en">Fitting options</span><span class="l-fr">Options d'ajustement</span></p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="l-en">Argument</span><span class="l-fr">Argument</span></th>
+              <th><span class="l-en">What it does</span><span class="l-fr">Rôle</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>order_mean</code></td><td><span class="l-en">Degree of the trend polynomial. 0 is a constant, 1 a straight line.</span><span class="l-fr">Degré du polynôme de tendance. 0 pour une constante, 1 pour une droite.</span></td></tr>
+            <tr><td><code>order_width</code></td><td><span class="l-en">Degree of the ln(sigma) polynomial, independent of the trend. 0 gives a band of constant width.</span><span class="l-fr">Degré du polynôme en ln(sigma), indépendant de la tendance. 0 donne une enveloppe de largeur constante.</span></td></tr>
+            <tr><td><code>log_y=True</code></td><td><span class="l-en">Fit log10(y). For quantities spanning decades or with multiplicative scatter.</span><span class="l-fr">Ajuster log10(y). Pour les quantités s'étendant sur des décades ou à dispersion multiplicative.</span></td></tr>
+            <tr><td><code>yerr=...</code></td><td><span class="l-en">Per-point measurement errors, so the fitted width is the intrinsic scatter.</span><span class="l-fr">Erreurs de mesure point par point, pour que la largeur ajustée soit la dispersion intrinsèque.</span></td></tr>
+            <tr><td><code>nu=4</code></td><td><span class="l-en">Student-t likelihood, for samples with outliers.</span><span class="l-fr">Vraisemblance de Student, pour les échantillons avec valeurs aberrantes.</span></td></tr>
+            <tr><td><code>dof_correction</code></td><td><span class="l-en">Undo the downward bias of maximum-likelihood widths. On by default.</span><span class="l-fr">Corriger le biais vers le bas des largeurs par maximum de vraisemblance. Actif par défaut.</span></td></tr>
+            <tr><td><code>n_bootstrap</code></td><td><span class="l-en">Estimate the coefficient covariance by resampling instead of from the Hessian.</span><span class="l-fr">Estimer la covariance des coefficients par rééchantillonnage plutôt que par le hessien.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="kicker" style="margin-top:18px"><span class="l-en">On the fit object</span><span class="l-fr">Sur l'objet ajusté</span></p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="l-en">Method</span><span class="l-fr">Méthode</span></th>
+              <th><span class="l-en">Returns</span><span class="l-fr">Renvoie</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>predict(x)</code></td><td><span class="l-en">The trend, in the units of y.</span><span class="l-fr">La tendance, dans les unités de y.</span></td></tr>
+            <tr><td><code>scatter(x)</code></td><td><span class="l-en">Half-width of the 1&sigma; band, in dex when log_y is set.</span><span class="l-fr">Demi-largeur de l'enveloppe à 1&sigma;, en dex si log_y est actif.</span></td></tr>
+            <tr><td><code>envelope(x, nsigma)</code></td><td><span class="l-en">Lower and upper edges of the band, where the points lie.</span><span class="l-fr">Bords inférieur et supérieur de l'enveloppe, là où se trouvent les points.</span></td></tr>
+            <tr><td><code>trend_band(x)</code></td><td><span class="l-en">Confidence band on the curve itself, a different and narrower thing.</span><span class="l-fr">Bande de confiance sur la courbe elle-même, quantité différente et plus étroite.</span></td></tr>
+            <tr><td><code>zscore(x, y)</code></td><td><span class="l-en">How unusual a point is, in units of the local width.</span><span class="l-fr">À quel point un point est atypique, en unités de la largeur locale.</span></td></tr>
+            <tr><td><code>coverage(x, y)</code></td><td><span class="l-en">Observed against expected fraction inside the band.</span><span class="l-fr">Fraction observée dans l'enveloppe, comparée à l'attendu.</span></td></tr>
+            <tr><td><code>grid(n, extrapolate)</code></td><td><span class="l-en">An x grid spanning the fitted range, for plotting.</span><span class="l-fr">Une grille en x couvrant l'intervalle ajusté, pour le tracé.</span></td></tr>
+            <tr><td><code>summary()</code></td><td><span class="l-en">Human-readable description of the fit.</span><span class="l-fr">Description lisible de l'ajustement.</span></td></tr>
+            <tr><td><code>aic</code>, <code>bic</code></td><td><span class="l-en">Information criteria, for comparing degrees.</span><span class="l-fr">Critères d'information, pour comparer les degrés.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>
+      <a href="https://github.com/eartigau/polyband" target="_blank"><span class="l-en">Source on GitHub</span><span class="l-fr">Code source sur GitHub</span></a>
+      &middot;
+      <a href="https://eartigau.github.io/" target="_blank"><span class="l-en">More tools</span><span class="l-fr">Autres outils</span></a>
+      &middot;
+      <span class="l-en">MIT licence</span><span class="l-fr">Licence MIT</span>
+    </p>
+  </footer>
+
+  <!-- Lightbox overlay -->
+  <div id="lightbox" class="lightbox" hidden>
+    <button id="lightboxClose" class="lightbox-close" aria-label="Close" type="button">&times;</button>
+    <figure class="lightbox-figure">
+      <img id="lightboxImg" src="" alt="" />
+      <figcaption id="lightboxCaption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="lightbox.js"></script>
+  <script>
+    (function () {
+      var STORE = "polyband_lang";
+
+      function apply(lang) {
+        lang = lang === "fr" ? "fr" : "en";
+        document.body.dataset.lang = lang;
+        document.documentElement.lang = lang;
+        var buttons = document.querySelectorAll(".lang-toggle button");
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].setAttribute(
+            "aria-pressed",
+            buttons[i].dataset.setLang === lang ? "true" : "false"
+          );
+        }
+        try { window.localStorage.setItem(STORE, lang); } catch (e) {}
+      }
+
+      var stored = null;
+      try { stored = window.localStorage.getItem(STORE); } catch (e) {}
+      // Fall back to the browser's preferred language on a first visit.
+      apply(stored || (navigator.language || "en").slice(0, 2));
+
+      document.querySelectorAll(".lang-toggle button").forEach(function (btn) {
+        btn.addEventListener("click", function () { apply(btn.dataset.setLang); });
+      });
+
+      if (typeof setupLightbox === "function") { setupLightbox(); }
+    })();
+  </script>
+</body>
+</html>
