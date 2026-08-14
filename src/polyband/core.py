@@ -364,7 +364,9 @@ def fit_polyband(
     Parameters
     ----------
     x, y : array_like
-        The data. Pairs containing NaN or inf are dropped silently.
+        The data. Any point whose x, y or yerr is NaN or infinite is dropped,
+        silently and as a whole row, so the three arrays stay aligned. See the
+        Notes section below.
     order_mean : int, default 2
         Degree of the trend polynomial. 0 is a constant, 1 a straight line.
     order_width : int, default 1
@@ -408,6 +410,24 @@ def fit_polyband(
         If there are not more finite points than free parameters, or if all x
         values are identical.
 
+    Notes
+    -----
+    **Non-finite data.** NaN and inf are treated identically and are removed
+    row-wise: a point is used only if its x, its y and, when supplied, its
+    yerr are all finite. With ``log_y=True`` the requirement ``y > 0`` is added,
+    and with ``yerr`` the requirement ``yerr >= 0``; ``yerr == 0`` is kept and
+    means an exact measurement. Removal is silent, so data with gaps can be
+    passed straight in, and :attr:`PolyBandFit.n_points` reports how many
+    points actually entered the fit. If fewer points survive than there are
+    free parameters, a ``ValueError`` is raised rather than a meaningless fit
+    returned.
+
+    The methods of the returned :class:`PolyBandFit` propagate non-finite
+    inputs rather than filtering them: ``predict(np.nan)`` is NaN, and
+    :meth:`PolyBandFit.in_range` is False for NaN and for inf.
+    :meth:`PolyBandFit.coverage` is the exception and drops non-finite
+    residuals, since a fraction computed over NaN would be meaningless.
+
     Examples
     --------
     >>> import numpy as np
@@ -426,6 +446,21 @@ def fit_polyband(
     if x.shape != y.shape:
         raise ValueError(f"x and y must have the same shape, got {x.shape} and {y.shape}")
 
+    # Non-finite handling. Every usability condition is accumulated into one
+    # boolean mask, which is then applied to x, y and yerr in the same
+    # operation. Doing it array by array would be the classic way to silently
+    # misalign the three, so it is deliberately a single mask:
+    #   - np.isfinite is False for NaN, +inf and -inf alike, so both kinds of
+    #     bad value are caught by the same test;
+    #   - log_y additionally drops y <= 0, which has no logarithm. NaN > 0 is
+    #     already False, so that test does not need its own NaN guard;
+    #   - a point with a non-finite or negative yerr is dropped rather than
+    #     silently treated as having no error, since the two mean different
+    #     things. yerr == 0 is legitimate and kept: it says the measurement is
+    #     exact, and the likelihood handles it.
+    # Dropping is silent by design, so that a catalogue with gaps can be passed
+    # straight in. What survived is recorded in ``n_points``, and comparing it
+    # against len(x) is the way to find out how much was thrown away.
     good = np.isfinite(x) & np.isfinite(y)
     if log_y:
         good &= y > 0

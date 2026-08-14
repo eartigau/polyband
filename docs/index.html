@@ -1412,6 +1412,62 @@ plot_polyband(robust_fit, ax=ax, show_points=False,
         <code>docs/make_figures.py</code>, qui les régénère toutes en une seule exécution.</p>
     </section>
 
+    <!-- ── Missing data ───────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Missing and non-finite data</span><span class="l-fr">Données manquantes et non finies</span></h2>
+      <div class="l-en">
+        <p>Real catalogues have holes in them, so you can hand one straight to
+          <code>fit_polyband</code> without cleaning it first. NaN and inf are treated
+          identically and removed <strong>row-wise</strong>: a point enters the fit only if its
+          x, its y and, when supplied, its <code>yerr</code> are all finite. The three arrays are
+          masked in a single operation, which is what keeps them aligned; filtering them one at a
+          time is the classic way to silently pair the wrong x with the wrong y.</p>
+        <ul class="feature-list">
+          <li><code>log_y=True</code> additionally drops <code>y &le; 0</code>, which has no
+            logarithm.</li>
+          <li><code>yerr</code> must be finite and non-negative. A point whose error bar is NaN is
+            dropped rather than quietly treated as having no error, because those are different
+            statements. <code>yerr = 0</code> is legitimate and kept: it says the measurement is
+            exact.</li>
+          <li>Removal is silent, so nothing interrupts a batch job.
+            <code>fit.n_points</code> reports how many points actually entered the fit, and
+            comparing it against <code>len(x)</code> is how you find out what was discarded.</li>
+          <li>If fewer points survive than there are free parameters, you get a
+            <code>ValueError</code> rather than a meaningless fit.</li>
+        </ul>
+        <p class="hint">Going the other way, the methods on the fit object propagate rather than
+          filter: <code>predict(np.nan)</code> is NaN, and <code>in_range</code> is False for both
+          NaN and inf. <code>coverage()</code> is the one exception and drops non-finite residuals,
+          since a fraction computed over NaN would mean nothing.</p>
+      </div>
+      <div class="l-fr">
+        <p>Les vrais catalogues sont troués, vous pouvez donc en passer un directement à
+          <code>fit_polyband</code> sans le nettoyer au préalable. NaN et inf sont traités de la
+          même façon et retirés <strong>par ligne</strong> : un point n'entre dans l'ajustement que
+          si son x, son y et, le cas échéant, son <code>yerr</code> sont tous finis. Les trois
+          tableaux sont masqués en une seule opération, ce qui garantit leur alignement ; les
+          filtrer un à un est la façon classique d'apparier silencieusement le mauvais x avec le
+          mauvais y.</p>
+        <ul class="feature-list">
+          <li><code>log_y=True</code> écarte en plus les <code>y &le; 0</code>, qui n'ont pas de
+            logarithme.</li>
+          <li><code>yerr</code> doit être fini et positif ou nul. Un point dont la barre d'erreur
+            vaut NaN est retiré plutôt que considéré comme dépourvu d'erreur, car ce sont deux
+            énoncés différents. <code>yerr = 0</code> est légitime et conservé : cela signifie que
+            la mesure est exacte.</li>
+          <li>Le retrait est silencieux, de sorte que rien n'interrompt un traitement par lots.
+            <code>fit.n_points</code> indique combien de points sont réellement entrés dans
+            l'ajustement, et le comparer à <code>len(x)</code> vous dit ce qui a été écarté.</li>
+          <li>S'il survit moins de points qu'il n'y a de paramètres libres, vous obtenez une
+            <code>ValueError</code> plutôt qu'un ajustement dénué de sens.</li>
+        </ul>
+        <p class="hint">Dans l'autre sens, les méthodes de l'objet ajusté propagent au lieu de
+          filtrer : <code>predict(np.nan)</code> vaut NaN, et <code>in_range</code> est False aussi
+          bien pour NaN que pour inf. <code>coverage()</code> fait seule exception et écarte les
+          résidus non finis, une fraction calculée sur des NaN n'ayant aucun sens.</p>
+      </div>
+    </section>
+
     <!-- ── API ────────────────────────────────────────────────────── -->
     <section class="card span-3">
       <h2><span class="l-en">Reference</span><span class="l-fr">Référence</span></h2>
