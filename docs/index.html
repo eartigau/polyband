@@ -927,6 +927,391 @@ plot_diagnostics(fit, x, y)</code></pre>
       </figure>
     </section>
 
+    <!-- ── Robustness: one weight for both polynomials ────────────── -->
+    <section class="card span-3">
+      <p class="kicker"><span class="l-en">Robustness</span><span class="l-fr">Robustesse</span></p>
+      <h2><span class="l-en">One weight, applied to both polynomials at once</span><span class="l-fr">Un seul poids, appliqué simultanément aux deux polynômes</span></h2>
+
+      <div class="l-en">
+        <p>With <code>nu</code> set, polyband is a genuinely robust fit of the trend
+          <em>and</em> of the envelope, in a single self-consistent operation. That is a strong
+          claim, so here is exactly what it means, in terms of the stationarity conditions
+          written further up this page.</p>
+        <p>Define one number per point:</p>
+      </div>
+      <div class="l-fr">
+        <p>Avec <code>nu</code> défini, polyband est un ajustement véritablement robuste de la
+          tendance <em>et</em> de l'enveloppe, en une seule opération auto-cohérente.
+          L'affirmation est forte, voici donc exactement ce qu'elle recouvre, en termes des
+          conditions de stationnarité écrites plus haut sur cette page.</p>
+        <p>Définissons un nombre par point :</p>
+      </div>
+
+      <div class="eq">
+<span class="tag"><span class="l-en">the weight</span><span class="l-fr">le poids</span></span><br>
+u<sub>i</sub> = (&nu; + 1) / (&nu; + z<sub>i</sub><sup>2</sup>)<br>
+<br>
+<span class="tag"><span class="l-en">trend</span><span class="l-fr">tendance</span></span> <span class="cmt">k = 0 &hellip; p</span><br>
+&Sigma;<sub>i</sub> u<sub>i</sub> t<sub>i</sub><sup>k</sup> ( y<sub>i</sub> &minus; &mu;<sub>i</sub> ) / &sigma;<sub>i</sub><sup>2</sup> &nbsp;=&nbsp; 0<br>
+<br>
+<span class="tag"><span class="l-en">width</span><span class="l-fr">largeur</span></span> <span class="cmt">k = 0 &hellip; q</span><br>
+&Sigma;<sub>i</sub> u<sub>i</sub> t<sub>i</sub><sup>k</sup> z<sub>i</sub><sup>2</sup> &nbsp;=&nbsp; &Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup><br>
+<br>
+<span class="cmt"><span class="l-en">the Gaussian default is exactly the special case u<sub>i</sub> = 1</span><span class="l-fr">le cas gaussien par défaut est exactement le cas particulier u<sub>i</sub> = 1</span></span>
+      </div>
+
+      <div class="l-en">
+        <p>The <em>same</em> u<sub>i</sub> appears in both families. Three things follow, each of
+          which is checked numerically rather than asserted.</p>
+        <ul class="feature-list">
+          <li><strong>The trend is exactly a weighted least squares</strong> with weight
+            u<sub>i</sub>/&sigma;<sub>i</sub>&sup2;. Solving that weighted normal equation
+            directly reproduces the fitted coefficients to 6&times;10<sup>&minus;8</sup>. The
+            robustness and the heteroscedastic weighting are the same mechanism, not two stacked
+            corrections.</li>
+          <li><strong>&Sigma;<sub>i</sub> u<sub>i</sub> = N, exactly.</strong> It falls out of the
+            k&nbsp;=&nbsp;0 width equation: &nu;&thinsp;&Sigma;u + &Sigma;u&thinsp;z&sup2; =
+            (&nu;+1)N and &Sigma;u&thinsp;z&sup2; = N. So this is a <em>redistribution</em> of
+            voting power, not a rejection of points. Weight taken from the tails is handed to the
+            core, where u rises to (&nu;+1)/&nu; = 1.25 for <code>nu=4</code>. On an 800-point
+            sample with 12% contamination, the 43 points beyond 5&sigma; hold 0.43% of the total
+            weight while making up 5.4% of the sample. Nothing was deleted; they were outvoted.</li>
+          <li><strong>It is self-consistent in the strict sense.</strong> u depends on z; z
+            depends on &mu; and &sigma;; &mu; and &sigma; solve their equations under u. There is
+            one fixed point, and it is reached by minimising one function. Compare the usual
+            recipe: fit a trend by least squares, clip on the residuals, take the RMS of the
+            survivors. Those are three different estimators stapled together, and nothing makes
+            the final width consistent with the trend that produced the mask.</li>
+        </ul>
+      </div>
+      <div class="l-fr">
+        <p>C'est le <em>même</em> u<sub>i</sub> qui apparaît dans les deux familles. Trois
+          conséquences en découlent, chacune vérifiée numériquement plutôt qu'affirmée.</p>
+        <ul class="feature-list">
+          <li><strong>La tendance est exactement des moindres carrés pondérés</strong> de poids
+            u<sub>i</sub>/&sigma;<sub>i</sub>&sup2;. Résoudre directement cette équation normale
+            pondérée redonne les coefficients ajustés à 6&times;10<sup>&minus;8</sup> près. La
+            robustesse et la pondération hétéroscédastique sont un seul et même mécanisme, non
+            deux corrections empilées.</li>
+          <li><strong>&Sigma;<sub>i</sub> u<sub>i</sub> = N, exactement.</strong> Cela découle de
+            l'équation de largeur k&nbsp;=&nbsp;0 : &nu;&thinsp;&Sigma;u + &Sigma;u&thinsp;z&sup2;
+            = (&nu;+1)N et &Sigma;u&thinsp;z&sup2; = N. Il s'agit donc d'une
+            <em>redistribution</em> du droit de vote, et non d'un rejet de points. Le poids retiré
+            aux queues est remis au cœur de la distribution, où u monte à (&nu;+1)/&nu; = 1,25
+            pour <code>nu=4</code>. Sur un échantillon de 800 points contaminé à 12&nbsp;%, les 43
+            points au-delà de 5&sigma; détiennent 0,43&nbsp;% du poids total tout en représentant
+            5,4&nbsp;% de l'échantillon. Rien n'a été supprimé : ils ont été mis en minorité.</li>
+          <li><strong>C'est auto-cohérent au sens strict.</strong> u dépend de z ; z dépend de
+            &mu; et &sigma; ; &mu; et &sigma; résolvent leurs équations sous le poids u. Il y a un
+            seul point fixe, atteint en minimisant une seule fonction. À comparer à la recette
+            habituelle : ajuster une tendance par moindres carrés, écrêter sur les résidus,
+            prendre l'écart-type des survivants. Ce sont trois estimateurs différents agrafés
+            ensemble, et rien ne garantit que la largeur finale soit cohérente avec la tendance
+            ayant produit le masque.</li>
+        </ul>
+      </div>
+
+      <p class="callout l-en"><strong>And it is already a mixture model.</strong> A Student-t is a
+        continuous scale mixture of Gaussians: if y&nbsp;|&nbsp;&lambda; ~ N(&mu;,
+        &sigma;&sup2;/&lambda;) with &lambda; ~ Gamma(&nu;/2, &nu;/2), then y ~ t<sub>&nu;</sub>.
+        The posterior of that per-point precision is
+        E[&lambda;<sub>i</sub>&nbsp;|&nbsp;y<sub>i</sub>] = (&nu;+1)/(&nu;+z<sub>i</sub>&sup2;),
+        which is u<sub>i</sub> exactly. So the weights above <em>are</em> the EM weights of a
+        mixture, with the mixing integrated out analytically. "Student-t or a mixture model" is
+        not really a choice between two things.</p>
+      <p class="callout l-fr"><strong>Et c'est déjà un modèle de mélange.</strong> Une loi de
+        Student est un mélange continu de gaussiennes en échelle : si y&nbsp;|&nbsp;&lambda; ~
+        N(&mu;, &sigma;&sup2;/&lambda;) avec &lambda; ~ Gamma(&nu;/2, &nu;/2), alors y ~
+        t<sub>&nu;</sub>. La loi a posteriori de cette précision par point vaut
+        E[&lambda;<sub>i</sub>&nbsp;|&nbsp;y<sub>i</sub>] = (&nu;+1)/(&nu;+z<sub>i</sub>&sup2;),
+        soit exactement u<sub>i</sub>. Les poids ci-dessus <em>sont</em> donc les poids EM d'un
+        mélange, dont la loi de mélange a été intégrée analytiquement. « Student ou modèle de
+        mélange » n'est pas vraiment un choix entre deux choses.</p>
+    </section>
+
+    <!-- ── Gallery: the two axes of contamination ─────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">How deviant they are, and how many there are</span><span class="l-fr">À quel point ils dévient, et combien ils sont</span></h2>
+      <div class="l-en">
+        <p>Outliers hurt along two independent axes, and the two behave completely differently.
+          The pull a single point exerts on the trend is
+          &psi;(z)&nbsp;=&nbsp;u&thinsp;z&nbsp;=&nbsp;(&nu;+1)z/(&nu;+z&sup2;). Under a Gaussian
+          likelihood u&nbsp;=&nbsp;1 and &psi;(z)&nbsp;=&nbsp;z grows without bound: a point ten
+          times further out pulls ten times harder, forever. Under Student-t, &psi; peaks at
+          z&nbsp;=&nbsp;&radic;&nu; and then <em>falls back towards zero</em>. With
+          <code>nu=4</code> it peaks at 1.25 for a point at 2&sigma; and is down to 0.005 for a
+          point at 1000&sigma;, so the wildest point in the sample pulls 250 times less than an
+          ordinary one.</p>
+      </div>
+      <div class="l-fr">
+        <p>Les valeurs aberrantes nuisent selon deux axes indépendants, qui se comportent de
+          façon complètement différente. L'attraction qu'un point exerce sur la tendance vaut
+          &psi;(z)&nbsp;=&nbsp;u&thinsp;z&nbsp;=&nbsp;(&nu;+1)z/(&nu;+z&sup2;). Sous une
+          vraisemblance gaussienne, u&nbsp;=&nbsp;1 et &psi;(z)&nbsp;=&nbsp;z croît sans borne :
+          un point dix fois plus éloigné tire dix fois plus fort, indéfiniment. Sous une loi de
+          Student, &psi; culmine en z&nbsp;=&nbsp;&radic;&nu; puis <em>redescend vers zéro</em>.
+          Avec <code>nu=4</code>, le maximum vaut 1,25 pour un point à 2&sigma; et tombe à 0,005
+          pour un point à 1000&sigma; : le point le plus extravagant de l'échantillon tire 250
+          fois moins qu'un point ordinaire.</p>
+      </div>
+      <figure class="fig">
+        <img data-fig="outliers_gallery" src="figures/en/outliers_gallery.svg" loading="lazy" alt="Eight panels scanning outlier fraction along the top row and outlier deviance along the bottom row" />
+        <figcaption>
+          <span class="l-en">500 points, true width 0.60 (green dashed), fitted with
+            <code>order_mean=2, order_width=0</code>. Top row: more and more outliers, each six
+            times wider than the core. Bottom row: always 10% of the sample, but each one further
+            out. Along the bottom row the Gaussian band goes from 0.86 to 150.72, a factor of 175,
+            while the Student-t band moves from 0.58 to 0.70 and then stops noticing at all. Along
+            the top row both degrade, because the fraction is the axis neither likelihood can
+            ignore.</span>
+          <span class="l-fr">500 points, largeur vraie 0,60 (pointillés verts), ajustés avec
+            <code>order_mean=2, order_width=0</code>. Rangée du haut : de plus en plus
+            d'aberrants, chacun six fois plus large que le cœur. Rangée du bas : toujours
+            10&nbsp;% de l'échantillon, mais chacun de plus en plus éloigné. Sur la rangée du bas,
+            l'enveloppe gaussienne passe de 0,86 à 150,72, un facteur 175, tandis que l'enveloppe
+            de Student va de 0,58 à 0,70 puis cesse complètement de réagir. Sur la rangée du haut,
+            les deux se dégradent, car la fraction est l'axe qu'aucune des deux vraisemblances ne
+            peut ignorer.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Scan: measured, not eyeballed ──────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">The same two axes, measured</span><span class="l-fr">Les deux mêmes axes, mesurés</span></h2>
+      <figure class="fig">
+        <img data-fig="outliers_scan" src="figures/en/outliers_scan.svg" loading="lazy" alt="Three panels: width versus outlier deviance, versus outlier fraction, and the cost on clean data" />
+        <figcaption>
+          <span class="l-en">Median over 25 realisations of 500 points each. Left: at 10%
+            contamination, as the outliers move from 1&times; to 1000&times; the true width, the
+            Gaussian answer climbs from 1.00 to 324 and keeps going, while <code>nu=4</code>
+            saturates at 1.29 and <code>nu=3</code> at 1.11. Middle: at a fixed 10&times; deviance,
+            every likelihood degrades steadily with the <em>fraction</em>. Right: what that
+            insurance costs when there is nothing to insure against.</span>
+          <span class="l-fr">Médiane sur 25 réalisations de 500 points chacune. À gauche : à
+            10&nbsp;% de contamination, lorsque les aberrants passent de 1&times; à 1000&times; la
+            largeur vraie, la réponse gaussienne grimpe de 1,00 à 324 et continue, tandis que
+            <code>nu=4</code> sature à 1,29 et <code>nu=3</code> à 1,11. Au centre : à déviance
+            fixée à 10&times;, toutes les vraisemblances se dégradent régulièrement avec la
+            <em>fraction</em>. À droite : ce que coûte cette assurance quand il n'y a rien à
+            assurer.</span>
+        </figcaption>
+      </figure>
+      <div class="l-en">
+        <p class="lead-in">The practical rule: budget by fraction, not by amplitude.</p>
+        <p>Past roughly 10&sigma; the deviance of an outlier stops mattering, so there is no point
+          worrying about how extreme your worst point is. The fraction never stops mattering. At a
+          10&times; deviance, <code>nu=4</code> stays within 11% of the truth up to 10%
+          contamination, is 56% high at 20%, and a factor 3.4 high at 40%.</p>
+        <p>That degradation is a property of the estimator, not of the optimiser. Restarting the
+          fit from the exact generating parameters at 30% contamination with 100&times; outliers
+          converges to the same wide answer in 15 trials out of 15, with an identical likelihood.
+          There is no better optimum being missed: the bounded influence is per point, and the
+          total influence of a large enough fraction is not bounded.</p>
+      </div>
+      <div class="l-fr">
+        <p class="lead-in">La règle pratique : raisonnez en fraction, pas en amplitude.</p>
+        <p>Au-delà d'environ 10&sigma;, le degré de déviance d'un point cesse de compter : inutile
+          donc de vous inquiéter du caractère extrême de votre pire point. La fraction, elle, ne
+          cesse jamais de compter. À déviance 10&times;, <code>nu=4</code> reste à moins de
+          11&nbsp;% de la vérité jusqu'à 10&nbsp;% de contamination, surestime de 56&nbsp;% à
+          20&nbsp;%, et d'un facteur 3,4 à 40&nbsp;%.</p>
+        <p>Cette dégradation est une propriété de l'estimateur, non de l'optimiseur. En relançant
+          l'ajustement depuis les paramètres exacts ayant généré les données, à 30&nbsp;% de
+          contamination avec des aberrants à 100&times;, on converge vers la même réponse large
+          dans 15 essais sur 15, avec une vraisemblance identique. Aucun meilleur optimum n'est
+          manqué : l'influence bornée l'est point par point, et l'influence totale d'une fraction
+          suffisamment grande, elle, ne l'est pas.</p>
+      </div>
+    </section>
+
+    <!-- ── The bill ───────────────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">What <code>nu</code> costs, and the calibration trap</span><span class="l-fr">Ce que coûte <code>nu</code>, et le piège de calibration</span></h2>
+      <div class="l-en">
+        <p>A Student-t width is the <em>scale parameter of a t distribution</em>, not a standard
+          deviation. On perfectly clean Gaussian data the fitted width comes back systematically
+          below the true sd, and <code>envelope(x, 1)</code> is no longer a 68% interval. This is
+          not a bug; it is what the parameter means. It does have to be corrected for if you
+          intend to read the band as a coverage statement.</p>
+      </div>
+      <div class="l-fr">
+        <p>Une largeur de Student est le <em>paramètre d'échelle d'une loi de Student</em>, non un
+          écart-type. Sur des données gaussiennes parfaitement propres, la largeur ajustée revient
+          systématiquement en dessous de l'écart-type vrai, et <code>envelope(x, 1)</code> n'est
+          plus un intervalle à 68&nbsp;%. Ce n'est pas un défaut : c'est le sens du paramètre. Mais
+          il faut en tenir compte si vous entendez lire l'enveloppe comme un énoncé de
+          couverture.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><code>nu</code></th>
+              <th><span class="l-en">fitted width / true sd</span><span class="l-fr">largeur ajustée / écart-type vrai</span></th>
+              <th><span class="l-en">band multiple for 68.3%</span><span class="l-fr">multiple d'enveloppe pour 68,3&nbsp;%</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2.5</td><td><span class="l-en">0.770</span><span class="l-fr">0,770</span></td><td><span class="l-en">1.296</span><span class="l-fr">1,296</span></td></tr>
+            <tr><td>3</td><td><span class="l-en">0.796</span><span class="l-fr">0,796</span></td><td><span class="l-en">1.253</span><span class="l-fr">1,253</span></td></tr>
+            <tr><td>4</td><td><span class="l-en">0.833</span><span class="l-fr">0,833</span></td><td><span class="l-en">1.191</span><span class="l-fr">1,191</span></td></tr>
+            <tr><td>5</td><td><span class="l-en">0.859</span><span class="l-fr">0,859</span></td><td><span class="l-en">1.157</span><span class="l-fr">1,157</span></td></tr>
+            <tr><td>7</td><td><span class="l-en">0.893</span><span class="l-fr">0,893</span></td><td><span class="l-en">1.114</span><span class="l-fr">1,114</span></td></tr>
+            <tr><td>10</td><td><span class="l-en">0.923</span><span class="l-fr">0,923</span></td><td><span class="l-en">1.081</span><span class="l-fr">1,081</span></td></tr>
+            <tr><td>20</td><td><span class="l-en">0.961</span><span class="l-fr">0,961</span></td><td><span class="l-en">1.038</span><span class="l-fr">1,038</span></td></tr>
+            <tr><td><span class="l-en">none (Gaussian)</span><span class="l-fr">aucun (gaussien)</span></td><td><span class="l-en">1.004</span><span class="l-fr">1,004</span></td><td><span class="l-en">0.991</span><span class="l-fr">0,991</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint l-en">Median over 60 clean samples of 600 points. Read the middle column as
+        the deflation to undo if you want a standard deviation, and the right-hand column as the
+        <code>nsigma</code> to ask for if you want a 68.3% interval. Better still, measure it on
+        your own data, which takes one line:</p>
+      <p class="hint l-fr">Médiane sur 60 échantillons propres de 600 points. Lisez la colonne du
+        milieu comme la déflation à annuler si vous voulez un écart-type, et celle de droite comme
+        le <code>nsigma</code> à demander si vous voulez un intervalle à 68,3&nbsp;%. Mieux encore,
+        mesurez-la sur vos propres données, ce qui tient en une ligne :</p>
+      <pre class="codeblock"><code>print(fit.coverage(x, y, nsigma=(1.19, 2, 3)))</code></pre>
+    </section>
+
+    <section class="card">
+      <h2><span class="l-en">Which <code>nu</code></span><span class="l-fr">Quel <code>nu</code></span></h2>
+      <ul class="feature-list l-en">
+        <li><strong>None (default).</strong> No outliers, or outliers you actually want the band
+          to describe. The width is then the plain standard deviation.</li>
+        <li><strong>4 to 5.</strong> The usual choice. Strong protection, a 14 to 17% deflation to
+          remember, and at 10% contamination it stays within 30% of the truth however deviant
+          the outliers get.</li>
+        <li><strong>2.5 to 3.</strong> When contamination is heavy. At 40% contamination with
+          10&times; outliers, <code>nu=2.5</code> returns 2.5 times the true width against 3.4
+          for <code>nu=4</code>: the error shrinks by about a third, it does not go away. Costs a
+          23% deflation and noisier widths.</li>
+        <li><strong>10 or more.</strong> Barely distinguishable from Gaussian. If this is enough,
+          you probably did not need <code>nu</code>.</li>
+      </ul>
+      <ul class="feature-list l-fr">
+        <li><strong>Aucun (par défaut).</strong> Pas d'aberrants, ou des aberrants que vous voulez
+          justement voir décrits par l'enveloppe. La largeur est alors l'écart-type ordinaire.</li>
+        <li><strong>4 à 5.</strong> Le choix habituel. Bonne protection, une déflation de 14 à
+          17&nbsp;% à retenir, et à 10&nbsp;% de contamination l'écart à la vérité reste sous
+          30&nbsp;% quelle que soit la déviance des aberrants.</li>
+        <li><strong>2,5 à 3.</strong> Quand la contamination est forte. À 40&nbsp;% de contamination
+          avec des aberrants à 10&times;, <code>nu=2.5</code> renvoie 2,5 fois la largeur vraie
+          contre 3,4 pour <code>nu=4</code> : l'erreur diminue d'environ un tiers, elle ne
+          disparaît pas. Coûte une déflation de 23&nbsp;% et des largeurs plus bruitées.</li>
+        <li><strong>10 ou plus.</strong> À peine distinguable du cas gaussien. Si cela suffit, vous
+          n'aviez probablement pas besoin de <code>nu</code>.</li>
+      </ul>
+    </section>
+
+    <!-- ── Head to head ───────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Against sigma clipping and against a fitted mixture</span><span class="l-fr">Face à l'écrêtage sigma et à un mélange ajusté</span></h2>
+      <div class="l-en">
+        <p>The honest comparison, on identical data: 600 points, a quadratic trend of constant
+          true width 0.60, 200 realisations per column. The entry is the median fitted width
+          divided by the true width, so 1.000 is perfect. Clipping is iterated to a fixed mask;
+          the corrected rows divide by the Gaussian truncation factor; the mixture is a fitted
+          two-component Gaussian with its own free fraction and ratio.</p>
+      </div>
+      <div class="l-fr">
+        <p>La comparaison honnête, sur des données identiques : 600 points, une tendance
+          quadratique de largeur vraie constante 0,60, 200 réalisations par colonne. La valeur est
+          la largeur ajustée médiane divisée par la largeur vraie ; 1,000 est donc parfait.
+          L'écrêtage est itéré jusqu'à masque stable ; les lignes corrigées divisent par le facteur
+          de troncature gaussien ; le mélange est un modèle à deux composantes gaussiennes ajusté
+          avec sa propre fraction et son propre rapport libres.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="l-en">method</span><span class="l-fr">méthode</span></th>
+              <th><span class="l-en">no outliers</span><span class="l-fr">sans aberrants</span></th>
+              <th>9%&nbsp;&times;6</th>
+              <th>25%&nbsp;&times;6</th>
+              <th><span class="l-en">10% one-sided</span><span class="l-fr">10&nbsp;% unilatéraux</span></th>
+              <th><span class="l-en">true t<sub>3</sub> tails</span><span class="l-fr">vraies queues t<sub>3</sub></span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="l-en">Gaussian</span><span class="l-fr">Gaussienne</span></td><td><span class="l-en">1.003</span><span class="l-fr">1,003</span></td><td><span class="l-en">2.038</span><span class="l-fr">2,038</span></td><td><span class="l-en">3.104</span><span class="l-fr">3,104</span></td><td><span class="l-en">2.858</span><span class="l-fr">2,858</span></td><td><span class="l-en">1.678</span><span class="l-fr">1,678</span></td></tr>
+            <tr><td>Student-t <code>nu=4</code></td><td><span class="l-en">0.833</span><span class="l-fr">0,833</span></td><td><span class="l-en">1.023</span><span class="l-fr">1,023</span></td><td><span class="l-en">1.544</span><span class="l-fr">1,544</span></td><td><span class="l-en">1.196</span><span class="l-fr">1,196</span></td><td><span class="l-en">1.076</span><span class="l-fr">1,076</span></td></tr>
+            <tr><td><span class="l-en">3&sigma; clip</span><span class="l-fr">écrêtage 3&sigma;</span></td><td><span class="l-en">0.988</span><span class="l-fr">0,988</span></td><td><span class="l-en">1.031</span><span class="l-fr">1,031</span></td><td><span class="l-en">1.190</span><span class="l-fr">1,190</span></td><td><span class="l-en">0.994</span><span class="l-fr">0,994</span></td><td><span class="l-en">1.213</span><span class="l-fr">1,213</span></td></tr>
+            <tr><td><span class="l-en">3&sigma; clip, corrected</span><span class="l-fr">écrêtage 3&sigma;, corrigé</span></td><td><span class="l-en">1.001</span><span class="l-fr">1,001</span></td><td><span class="l-en">1.045</span><span class="l-fr">1,045</span></td><td><span class="l-en">1.206</span><span class="l-fr">1,206</span></td><td><span class="l-en">1.008</span><span class="l-fr">1,008</span></td><td><span class="l-en">1.230</span><span class="l-fr">1,230</span></td></tr>
+            <tr><td><span class="l-en">2&sigma; clip, corrected</span><span class="l-fr">écrêtage 2&sigma;, corrigé</span></td><td><span class="l-en">0.848</span><span class="l-fr">0,848</span></td><td><span class="l-en">0.861</span><span class="l-fr">0,861</span></td><td><span class="l-en">0.890</span><span class="l-fr">0,890</span></td><td><span class="l-en">0.852</span><span class="l-fr">0,852</span></td><td><span class="l-en">0.836</span><span class="l-fr">0,836</span></td></tr>
+            <tr><td><span class="l-en">2-component mixture</span><span class="l-fr">mélange à 2 composantes</span></td><td><span class="l-en">0.973</span><span class="l-fr">0,973</span></td><td><span class="l-en">0.996</span><span class="l-fr">0,996</span></td><td><span class="l-en">0.995</span><span class="l-fr">0,995</span></td><td><span class="l-en">0.954</span><span class="l-fr">0,954</span></td><td><span class="l-en">1.079</span><span class="l-fr">1,079</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="l-en">
+        <p class="lead-in">What the table actually says.</p>
+        <ul class="feature-list">
+          <li><strong>Sigma clipping at 3&sigma; is good, and deserves to be said so.</strong> With
+            the truncation correction it is the most accurate method on clean data (1.001) and the
+            best of all on one-sided outliers (1.008), where Student-t is 20% high because it
+            downweights a one-sided tail without removing it. Its weaknesses are elsewhere: the
+            correction is Gaussian-specific and threshold-specific, and at 2&sigma; it is 11 to
+            16% low in <em>every</em> column, because the mask and the fit are not independent and
+            no analytic factor repairs that. It also needs a working &sigma;(x) to clip against,
+            which is the quantity you were trying to estimate.</li>
+          <li><strong>The fitted mixture wins where the data really are a mixture</strong> (0.996
+            and 0.995), which is no surprise since it is then the true model. It pays for it in
+            precision: the realisation-to-realisation scatter of its width is 0.057 on clean data
+            against 0.026 for Student-t, and 0.108 on genuine t<sub>3</sub> tails against 0.042.
+            It also carries two extra parameters, a likelihood that can degenerate onto a single
+            point, and no guarantee of a unique optimum.</li>
+          <li><strong>Student-t is the one-parameter middle</strong>, and it is the only row in
+            the table that never needs a threshold, never deletes a point, and applies the same
+            weight to the trend and to the envelope. Its bill is the deflation in the first
+            column.</li>
+        </ul>
+        <p class="callout"><strong>Choosing.</strong> Contamination below about 10% and you want a
+          single robust pass with no knobs: <code>nu=4</code>. One-sided contamination, or you
+          need the band to be a literal standard deviation: 3&sigma; clipping with the correction,
+          or <code>nu</code> plus a coverage calibration. The contaminating population is
+          physically interesting and you want to measure it: fit the mixture, and accept the extra
+          variance. Contamination above roughly 30%: none of these is trustworthy without
+          modelling the contaminant explicitly.</p>
+      </div>
+      <div class="l-fr">
+        <p class="lead-in">Ce que dit réellement ce tableau.</p>
+        <ul class="feature-list">
+          <li><strong>L'écrêtage à 3&sigma; est bon, et il faut le dire.</strong> Avec la
+            correction de troncature, c'est la méthode la plus exacte sur données propres (1,001)
+            et la meilleure de toutes sur les aberrants unilatéraux (1,008), là où Student
+            surestime de 20&nbsp;% parce qu'il sous-pondère une queue unilatérale sans la
+            supprimer. Ses faiblesses sont ailleurs : la correction est propre au cas gaussien et
+            au seuil choisi, et à 2&sigma; elle sous-estime de 11 à 16&nbsp;% dans
+            <em>toutes</em> les colonnes, car le masque et l'ajustement ne sont pas indépendants
+            et aucun facteur analytique ne répare cela. Il faut de plus disposer d'un &sigma;(x)
+            de travail pour écrêter, c'est-à-dire de la quantité même que l'on cherchait à
+            estimer.</li>
+          <li><strong>Le mélange ajusté gagne là où les données sont réellement un mélange</strong>
+            (0,996 et 0,995), ce qui n'a rien d'étonnant puisqu'il en est alors le modèle vrai. Il
+            le paie en précision : la dispersion de sa largeur d'une réalisation à l'autre vaut
+            0,057 sur données propres contre 0,026 pour Student, et 0,108 sur de vraies queues
+            t<sub>3</sub> contre 0,042. Il porte en outre deux paramètres de plus, une
+            vraisemblance qui peut dégénérer sur un point isolé, et aucune garantie d'optimum
+            unique.</li>
+          <li><strong>Student est le juste milieu à un paramètre</strong>, et c'est la seule ligne
+            du tableau qui ne demande aucun seuil, ne supprime aucun point et applique le même
+            poids à la tendance et à l'enveloppe. Sa facture, c'est la déflation de la première
+            colonne.</li>
+        </ul>
+        <p class="callout"><strong>Choisir.</strong> Contamination sous environ 10&nbsp;% et vous
+          voulez une passe robuste unique sans réglage : <code>nu=4</code>. Contamination
+          unilatérale, ou besoin que l'enveloppe soit un écart-type au sens littéral : écrêtage à
+          3&sigma; avec la correction, ou <code>nu</code> assorti d'une calibration par la
+          couverture. La population contaminante vous intéresse physiquement et vous voulez la
+          mesurer : ajustez le mélange, et acceptez la variance supplémentaire. Contamination
+          au-dessus d'environ 30&nbsp;% : aucune de ces méthodes n'est fiable sans modéliser
+          explicitement le contaminant.</p>
+      </div>
+    </section>
+
     <!-- ── yerr ───────────────────────────────────────────────────── -->
     <section class="card span-3">
       <h2><span class="l-en">Points with measurement errors</span><span class="l-fr">Points avec barres d'erreur</span></h2>
