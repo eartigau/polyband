@@ -94,6 +94,33 @@
   }
   .model-eq .dim { color: var(--muted); }
 
+  /* Displayed equations, left-aligned so the sums line up */
+  .eq {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.9rem;
+    line-height: 1.85;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 10px;
+    background: rgba(4, 8, 16, 0.75);
+    border: 1px solid rgba(130, 180, 240, 0.22);
+    border-left: 3px solid var(--accent);
+    color: #e6f2ff;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq .cmt { color: var(--muted); }
+  .eq .tag {
+    color: var(--accent);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .eq sub, .eq sup { font-size: 0.72em; }
+
+  /* A lead-in line above an argument, in the accent colour */
+  .card p.lead-in { color: #e8eef8; font-weight: 500; margin-top: 16px; }
+
   /* Tables */
   table {
     width: 100%;
@@ -429,6 +456,307 @@ plt.show()</code></pre>
       <p class="hint l-fr">Deux lignes pour le vérifier sur vos propres données :</p>
       <pre class="codeblock"><code>for k, obs, exp in fit.coverage(x, y):
     print(k, obs, exp)</code></pre>
+    </section>
+
+    <!-- ── The mathematics ────────────────────────────────────────── -->
+    <section class="card span-3">
+      <p class="kicker"><span class="l-en">Under the hood</span><span class="l-fr">Sous le capot</span></p>
+      <h2><span class="l-en">The objective, and the two terms that fight over it</span><span class="l-fr">La fonction objectif, et les deux termes qui s'y opposent</span></h2>
+
+      <div class="l-en">
+        <p>There is a single objective function, and it is minimised in one shot over all
+          <em>p</em>&nbsp;+&nbsp;<em>q</em>&nbsp;+&nbsp;2 coefficients at once. Everything the
+          package does follows from its shape, so it is worth writing out in full.</p>
+      </div>
+      <div class="l-fr">
+        <p>Il n'y a qu'une seule fonction objectif, minimisée d'un seul coup sur l'ensemble des
+          <em>p</em>&nbsp;+&nbsp;<em>q</em>&nbsp;+&nbsp;2 coefficients. Tout ce que fait le module
+          découle de sa forme, ce qui justifie de l'écrire au complet.</p>
+      </div>
+
+      <div class="eq">
+<span class="tag"><span class="l-en">objective</span><span class="l-fr">fonction objectif</span></span><br>
+&minus;ln L(a, b) &nbsp;=&nbsp; &Sigma;<sub>i</sub> [ &frac12;&thinsp;z<sub>i</sub><sup>2</sup> + ln &sigma;(x<sub>i</sub>) ]<br>
+<br>
+z<sub>i</sub> = ( y<sub>i</sub> &minus; &mu;(x<sub>i</sub>) ) / &sigma;(x<sub>i</sub>)<br>
+&mu;(x) = a<sub>0</sub> + a<sub>1</sub>t + &hellip; + a<sub>p</sub>t<sup>p</sup><br>
+ln &sigma;(x) = b<sub>0</sub> + b<sub>1</sub>t + &hellip; + b<sub>q</sub>t<sup>q</sup><br>
+t = (x &minus; x<sub>0</sub>) / &Delta; &nbsp;&isin;&nbsp; [&minus;1, 1]<br>
+<br>
+<span class="cmt"><span class="l-en">with yerr: &sigma;<sup>2</sup>(x<sub>i</sub>) is replaced by &sigma;<sup>2</sup>(x<sub>i</sub>) + s<sub>i</sub><sup>2</sup></span><span class="l-fr">avec yerr : &sigma;<sup>2</sup>(x<sub>i</sub>) est remplacé par &sigma;<sup>2</sup>(x<sub>i</sub>) + s<sub>i</sub><sup>2</sup></span></span>
+      </div>
+
+      <div class="l-en">
+        <p>Two terms, pulling in opposite directions. The first, &frac12;z&sup2;, rewards a
+          <em>wide</em> band: make &sigma; large enough and every residual looks small. The
+          second, ln&nbsp;&sigma;, rewards a <em>narrow</em> one, and does so without limit as
+          &sigma; goes to zero. Neither can run away with it. For a single point with residual
+          <em>r</em>, the sum of the two is minimised at exactly &sigma;&nbsp;=&nbsp;|r|. That is
+          the whole mechanism: the band is held in place from both sides at once.</p>
+      </div>
+      <div class="l-fr">
+        <p>Deux termes, qui tirent en sens inverse. Le premier, &frac12;z&sup2;, récompense une
+          enveloppe <em>large</em> : prenez &sigma; assez grand et tous les résidus paraissent
+          petits. Le second, ln&nbsp;&sigma;, récompense une enveloppe <em>étroite</em>, et sans
+          borne lorsque &sigma; tend vers zéro. Aucun des deux ne peut l'emporter. Pour un point
+          isolé de résidu <em>r</em>, leur somme est minimale exactement en
+          &sigma;&nbsp;=&nbsp;|r|. C'est là tout le mécanisme : l'enveloppe est tenue des deux
+          côtés à la fois.</p>
+      </div>
+    </section>
+
+    <!-- ── No compensation ────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Why an underestimate here is not paid for by an overestimate there</span><span class="l-fr">Pourquoi une sous-estimation ici n'est pas compensée par une surestimation ailleurs</span></h2>
+
+      <div class="l-en">
+        <p>This is the natural worry. The objective is one number, summed over the whole sample,
+          so could a band that is too narrow at low x and too wide at high x score just as well
+          as the correct one? It cannot, and there are two separate reasons why.</p>
+
+        <p class="lead-in">1. The cost is a sum of per-point terms, none of which can be
+          negative.</p>
+        <p>Suppose the true width at point i is &sigma;<sub>true,i</sub> and the model puts
+          &sigma;<sub>i</sub> = r<sub>i</sub>&thinsp;&sigma;<sub>true,i</sub>. Averaged over noise
+          realisations, the amount by which &minus;ln&nbsp;L exceeds the value it would take for
+          the correct band is:</p>
+      </div>
+      <div class="l-fr">
+        <p>C'est l'inquiétude naturelle. L'objectif est un seul nombre, sommé sur tout
+          l'échantillon : une enveloppe trop étroite aux petits x et trop large aux grands x
+          pourrait-elle obtenir le même score que la bonne ? Non, et pour deux raisons
+          distinctes.</p>
+
+        <p class="lead-in">1. Le coût est une somme de termes point par point, dont aucun ne peut
+          être négatif.</p>
+        <p>Supposons que la largeur vraie au point i soit &sigma;<sub>vrai,i</sub> et que le
+          modèle pose &sigma;<sub>i</sub> = r<sub>i</sub>&thinsp;&sigma;<sub>vrai,i</sub>. En
+          moyenne sur les réalisations du bruit, l'excès de &minus;ln&nbsp;L par rapport à la
+          valeur qu'atteindrait l'enveloppe correcte vaut :</p>
+      </div>
+
+      <div class="eq">
+<span class="tag"><span class="l-en">expected excess</span><span class="l-fr">excès attendu</span></span><br>
+E[ &Delta;(&minus;ln L) ] &nbsp;=&nbsp; &Sigma;<sub>i</sub> [ &frac12;&thinsp;( 1/r<sub>i</sub><sup>2</sup> &minus; 1 ) + ln r<sub>i</sub> ] &nbsp;&ge;&nbsp; 0<br>
+<br>
+<span class="cmt"><span class="l-en">each term is a Kullback-Leibler divergence: zero at r = 1, positive everywhere else</span><span class="l-fr">chaque terme est une divergence de Kullback-Leibler : nulle en r = 1, positive partout ailleurs</span></span><br>
+<span class="cmt"><span class="l-en">r = 0.80 &rarr; +0.058 nats &nbsp;&nbsp; r = 1.25 &rarr; +0.043 nats &nbsp;&nbsp; both are debits</span><span class="l-fr">r = 0,80 &rarr; +0,058 nat &nbsp;&nbsp; r = 1,25 &rarr; +0,043 nat &nbsp;&nbsp; deux débits</span></span>
+      </div>
+
+      <div class="l-en">
+        <p>Every term vanishes at r&nbsp;=&nbsp;1 and is strictly positive otherwise. A width 20%
+          too small costs 0.058&nbsp;nats at that point; a width 25% too large costs 0.043. Both
+          are charges against the fit. There is no credit anywhere in the sum to be spent at the
+          other end of the x range, so errors of opposite sign <em>add up</em> instead of
+          cancelling.</p>
+
+        <p class="lead-in">2. The stationarity conditions pin down each moment separately.</p>
+        <p>Differentiating the objective with respect to the coefficients and setting the result
+          to zero gives two families of equations, one per polynomial:</p>
+      </div>
+      <div class="l-fr">
+        <p>Chaque terme s'annule en r&nbsp;=&nbsp;1 et est strictement positif ailleurs. Une
+          largeur 20&nbsp;% trop petite coûte 0,058&nbsp;nat en ce point ; une largeur 25&nbsp;%
+          trop grande en coûte 0,043. Ce sont deux débits. Il n'existe nulle part dans la somme
+          de crédit à dépenser à l'autre bout de l'intervalle en x : les erreurs de signes
+          opposés <em>s'additionnent</em> au lieu de s'annuler.</p>
+
+        <p class="lead-in">2. Les conditions de stationnarité fixent chaque moment
+          séparément.</p>
+        <p>En dérivant l'objectif par rapport aux coefficients et en annulant le résultat, on
+          obtient deux familles d'équations, une par polynôme :</p>
+      </div>
+
+      <div class="eq">
+<span class="tag"><span class="l-en">trend</span><span class="l-fr">tendance</span></span> <span class="cmt">k = 0 &hellip; p</span><br>
+&Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup> ( y<sub>i</sub> &minus; &mu;<sub>i</sub> ) / &sigma;<sub>i</sub><sup>2</sup> &nbsp;=&nbsp; 0<br>
+<br>
+<span class="tag"><span class="l-en">width</span><span class="l-fr">largeur</span></span> <span class="cmt">k = 0 &hellip; q</span><br>
+&Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup> z<sub>i</sub><sup>2</sup> &nbsp;=&nbsp; &Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup>
+      </div>
+
+      <div class="l-en">
+        <p>Read the second family out loud. For k&nbsp;=&nbsp;0 it says the standardised residuals
+          have mean square exactly 1: the band is right <em>on average</em>. For k&nbsp;=&nbsp;1
+          it says the same holds after weighting by t, that is, no tilt is left in z&sup2;. For
+          k&nbsp;=&nbsp;2, no curvature is left. And "too narrow on the left, too wide on the
+          right" is precisely a non-zero k&nbsp;=&nbsp;1 moment, which the k&nbsp;=&nbsp;1
+          equation sets to zero. Each degree given to the width polynomial buys one more moment
+          of z&sup2; that the fit is <em>forced</em> to get right. On the 450-point fit at the top
+          of this page these conditions hold to one part in 10<sup>8</sup>.</p>
+        <p>The first family is the trend, and it is the familiar normal equations with one
+          difference: each residual carries a weight 1/&sigma;<sub>i</sub>&sup2;. Points in the
+          noisy part of the x range pull less on the trend than points in the quiet part,
+          automatically, which is the concrete reason for fitting both polynomials together
+          rather than in two passes. Over 200 synthetic samples of 300 points each, the joint
+          trend at x&nbsp;=&nbsp;5 is 1.6 times more precise than an unweighted least-squares
+          trend on the same data (0.089 against 0.142 in scatter).</p>
+      </div>
+      <div class="l-fr">
+        <p>Lisez la seconde famille à voix haute. Pour k&nbsp;=&nbsp;0, elle dit que les résidus
+          standardisés ont une moyenne quadratique exactement égale à 1 : l'enveloppe est juste
+          <em>en moyenne</em>. Pour k&nbsp;=&nbsp;1, elle dit que c'est encore vrai après
+          pondération par t, autrement dit qu'il ne subsiste aucune inclinaison dans z&sup2;.
+          Pour k&nbsp;=&nbsp;2, aucune courbure. Or « trop étroite à gauche, trop large à droite »
+          est exactement un moment k&nbsp;=&nbsp;1 non nul, que l'équation k&nbsp;=&nbsp;1 annule.
+          Chaque degré accordé au polynôme de largeur achète un moment de z&sup2; de plus que
+          l'ajustement est <em>contraint</em> de reproduire. Sur l'ajustement à 450 points montré
+          en haut de cette page, ces conditions sont vérifiées à une partie sur
+          10<sup>8</sup> près.</p>
+        <p>La première famille est celle de la tendance : ce sont les équations normales
+          habituelles, à une différence près, chaque résidu portant un poids
+          1/&sigma;<sub>i</sub>&sup2;. Les points situés dans la portion bruitée de l'axe des x
+          influencent moins la tendance que ceux de la portion calme, automatiquement, et c'est
+          la raison concrète d'ajuster les deux polynômes ensemble plutôt qu'en deux passes. Sur
+          200 échantillons synthétiques de 300 points chacun, la tendance conjointe en
+          x&nbsp;=&nbsp;5 est 1,6 fois plus précise qu'une tendance par moindres carrés non
+          pondérés sur les mêmes données (0,089 contre 0,142 de dispersion).</p>
+      </div>
+
+      <figure class="fig">
+        <img data-fig="optimisation" src="figures/en/optimisation.svg" loading="lazy" alt="Three panels: the per-point cost of a wrong width, a compensating tilt, and its price" />
+        <figcaption>
+          <span class="l-en">Left: the expected cost of one point when the band is a factor r too
+            wide, split into its two competing terms. Their sum has one minimum, at the true
+            width. Middle: what a compensating error looks like, a band tilted so that it is 18%
+            too narrow at one end and 22% too wide at the other while its average width stays
+            right; the blue curve is what polyband actually returns on 5000 points. Right: the price of that
+            tilt, measured by forcing it on the fit and re-optimising every other parameter to
+            buy it back. The curve has a single minimum at zero. With 450 points a tilt of 0.2
+            already costs 6.5 in &minus;ln&nbsp;L, a likelihood ratio of about 700; with 1800
+            points it costs 24, a factor of 3&times;10<sup>10</sup>.</span>
+          <span class="l-fr">À gauche : le coût attendu d'un point lorsque l'enveloppe est d'un
+            facteur r trop large, décomposé en ses deux termes concurrents. Leur somme n'a qu'un
+            minimum, à la largeur vraie. Au centre : à quoi ressemblerait une erreur
+            compensatoire, une enveloppe inclinée de façon à être 18&nbsp;% trop étroite d'un
+            côté et 22&nbsp;% trop large de l'autre, sa largeur moyenne restant juste ; la courbe
+            bleue est ce que polyband renvoie réellement sur 5000 points. À droite : le prix de cette
+            inclinaison, mesuré en l'imposant à l'ajustement puis en réoptimisant tous les autres
+            paramètres pour tenter de la racheter. La courbe n'a qu'un seul minimum, en zéro.
+            Avec 450 points, une inclinaison de 0,2 coûte déjà 6,5 en &minus;ln&nbsp;L, soit un
+            rapport de vraisemblance d'environ 700 ; avec 1800 points elle coûte 24, soit un
+            facteur 3&times;10<sup>10</sup>.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ── Misspecification ───────────────────────────────────────── -->
+    <section class="card span-2">
+      <h2><span class="l-en">Where compensation is genuinely possible</span><span class="l-fr">Où la compensation est réellement possible</span></h2>
+      <div class="l-en">
+        <p>Everything above holds <em>inside</em> the family of models you chose. It says nothing
+          about a width the family cannot represent. If ln&nbsp;&sigma; is genuinely quadratic in
+          x and you fit <code>order_width=1</code>, the fit will trade one region against another,
+          because it has no other option: it satisfies the moments up to k&nbsp;=&nbsp;1 and lets
+          the rest fall where it must.</p>
+        <p>The good news is that this failure is loud. Fit 5000 trumpet points, whose true width
+          grows by a factor of 16 across the range, with <code>order_width=0</code>, and the
+          k&nbsp;=&nbsp;0 equation still holds exactly: mean&nbsp;z&sup2;&nbsp;=&nbsp;1.000000, so
+          the band is still right on average. It is nonetheless 6.9 times too wide at
+          x&nbsp;=&nbsp;0 and 2.4 times too narrow at x&nbsp;=&nbsp;10, and the 1&sigma; band
+          swallows 79.1% of the points instead of 68.3%. Add the one missing degree and the width
+          stays within 1.4% of the truth across the whole range, with coverage at 68.1%.</p>
+        <p class="callout">This is exactly why the BIC scan and the residual plots are not
+          optional decoration. The likelihood polices the model you handed it; only you can
+          police the choice of model. It is the same funnel shown further down this page.</p>
+      </div>
+      <div class="l-fr">
+        <p>Tout ce qui précède vaut <em>à l'intérieur</em> de la famille de modèles que vous avez
+          choisie. Cela ne dit rien d'une largeur que cette famille ne sait pas représenter. Si
+          ln&nbsp;&sigma; est réellement quadratique en x et que vous ajustez
+          <code>order_width=1</code>, l'ajustement arbitrera bien entre les régions, faute
+          d'autre possibilité : il satisfait les moments jusqu'à k&nbsp;=&nbsp;1 et laisse le
+          reste retomber où il peut.</p>
+        <p>La bonne nouvelle, c'est que ce défaut est bruyant. Ajustez 5000 points en trompette,
+          dont la largeur vraie croît d'un facteur 16 sur l'intervalle, avec
+          <code>order_width=0</code> : l'équation k&nbsp;=&nbsp;0 reste exactement vérifiée,
+          moyenne de z&sup2;&nbsp;=&nbsp;1,000000, donc l'enveloppe est toujours juste en moyenne.
+          Elle est pourtant 6,9 fois trop large en x&nbsp;=&nbsp;0 et 2,4 fois trop étroite en
+          x&nbsp;=&nbsp;10, et l'enveloppe à 1&sigma; contient 79,1&nbsp;% des points au lieu de
+          68,3&nbsp;%. Ajoutez le degré manquant et la largeur reste à moins de 1,4&nbsp;% de la
+          vérité sur tout l'intervalle, avec une couverture de 68,1&nbsp;%.</p>
+        <p class="callout">C'est précisément pour cela que le balayage par BIC et les graphiques
+          de résidus ne sont pas décoratifs. La vraisemblance surveille le modèle que vous lui
+          avez donné ; vous seul pouvez surveiller le choix du modèle. C'est le même entonnoir
+          que celui montré plus bas sur cette page.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="l-en">Outliers change the weights, not the logic</span><span class="l-fr">Les points aberrants changent les poids, pas la logique</span></h2>
+      <div class="eq">
+<span class="tag">student-t &middot; <span class="l-en">width</span><span class="l-fr">largeur</span></span><br>
+&Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup> w(z<sub>i</sub>) = &Sigma;<sub>i</sub> t<sub>i</sub><sup>k</sup><br>
+<br>
+w(z) = (&nu;+1) z<sup>2</sup> / (&nu; + z<sup>2</sup>)
+      </div>
+      <p class="l-en">Setting <code>nu</code> replaces the Gaussian z&sup2; in the width equations
+        by a saturating weight. Since w(1)&nbsp;=&nbsp;1 for any <code>nu</code>, an ordinary
+        point counts exactly as it did before, but w cannot exceed &nu;&nbsp;+&nbsp;1: with
+        <code>nu=4</code>, a point at 10&sigma; contributes 4.8 rather than 100. The moment
+        conditions keep their form, and a handful of far-flung points can no longer dictate
+        them.</p>
+      <p class="l-fr">Définir <code>nu</code> remplace le z&sup2; gaussien des équations de
+        largeur par un poids qui sature. Comme w(1)&nbsp;=&nbsp;1 quel que soit <code>nu</code>,
+        un point ordinaire compte exactement comme avant, mais w ne peut dépasser
+        &nu;&nbsp;+&nbsp;1 : avec <code>nu=4</code>, un point à 10&sigma; contribue pour 4,8 et
+        non pour 100. Les conditions sur les moments gardent leur forme, et une poignée de points
+        très éloignés ne peut plus les dicter.</p>
+    </section>
+
+    <!-- ── Numerics ───────────────────────────────────────────────── -->
+    <section class="card span-3">
+      <h2><span class="l-en">Finding the minimum in practice</span><span class="l-fr">Trouver le minimum en pratique</span></h2>
+      <ul class="feature-list l-en">
+        <li><strong>Rescaling.</strong> x is mapped to t&nbsp;=&nbsp;(x&nbsp;&minus;&nbsp;x<sub>0</sub>)/&Delta;
+          on [&minus;1,&nbsp;1] before the Vandermonde matrices are built. Raw values in the
+          thousands are hopelessly ill-conditioned by degree 3.</li>
+        <li><strong>Starting guess.</strong> Ordinary least squares for the trend, then a
+          polynomial fit to ln|residual| for the width. For Gaussian z,
+          E[ln|z|]&nbsp;=&nbsp;ln&nbsp;&sigma;&nbsp;&minus;&nbsp;(&gamma;&nbsp;+&nbsp;ln&nbsp;2)/2
+          &asymp; ln&nbsp;&sigma;&nbsp;&minus;&nbsp;0.6352, so that offset is removed; otherwise
+          the optimiser starts from a band a factor of two too narrow.</li>
+        <li><strong>Two optimisers.</strong> Nelder-Mead first, because the likelihood is mildly
+          non-quadratic in the width coefficients and it does not care; BFGS then polishes from a
+          good point.</li>
+        <li><strong>Convergence is judged on the objective</strong>, not on the exit flag. BFGS
+          routinely reports precision loss when handed an already-converged start, which is
+          exactly the situation here.</li>
+        <li><strong>Covariance</strong> comes from an explicit central-difference Hessian,
+          inverted. The inverse Hessian BFGS accumulates is not trustworthy here, since it exits
+          having built almost no curvature information. <code>n_bootstrap</code> resamples
+          instead, at the cost of speed and with no assumption of local quadraticity.</li>
+        <li><strong>Bias correction, last.</strong> b<sub>0</sub> is raised by
+          &frac12;&thinsp;ln(N/(N&nbsp;&minus;&nbsp;p)), which undoes the downward bias of
+          maximum-likelihood widths. It is the same correction as dividing by N&nbsp;&minus;&nbsp;1
+          rather than N in a plain standard deviation.</li>
+      </ul>
+      <ul class="feature-list l-fr">
+        <li><strong>Remise à l'échelle.</strong> x est ramené sur
+          t&nbsp;=&nbsp;(x&nbsp;&minus;&nbsp;x<sub>0</sub>)/&Delta; dans [&minus;1,&nbsp;1] avant
+          la construction des matrices de Vandermonde. Des valeurs brutes de l'ordre du millier
+          sont irrémédiablement mal conditionnées dès le degré 3.</li>
+        <li><strong>Point de départ.</strong> Moindres carrés ordinaires pour la tendance, puis
+          ajustement polynomial de ln|résidu| pour la largeur. Pour un z gaussien,
+          E[ln|z|]&nbsp;=&nbsp;ln&nbsp;&sigma;&nbsp;&minus;&nbsp;(&gamma;&nbsp;+&nbsp;ln&nbsp;2)/2
+          &asymp; ln&nbsp;&sigma;&nbsp;&minus;&nbsp;0,6352 ; ce décalage est donc retiré, sans
+          quoi l'optimiseur partirait d'une enveloppe deux fois trop étroite.</li>
+        <li><strong>Deux optimiseurs.</strong> Nelder-Mead d'abord, car la vraisemblance est
+          légèrement non quadratique en les coefficients de largeur et cela lui est indifférent ;
+          BFGS peaufine ensuite à partir d'un bon point.</li>
+        <li><strong>La convergence est jugée sur l'objectif</strong>, non sur le code de sortie.
+          BFGS signale couramment une perte de précision quand on lui donne un point déjà
+          convergé, ce qui est exactement le cas ici.</li>
+        <li><strong>La covariance</strong> provient d'un hessien numérique par différences
+          centrées, inversé. Le hessien inverse accumulé par BFGS n'est pas fiable ici, puisqu'il
+          s'arrête sans avoir construit d'information de courbure. <code>n_bootstrap</code>
+          rééchantillonne à la place, plus lentement mais sans supposer la vraisemblance
+          localement quadratique.</li>
+        <li><strong>Correction de biais, en dernier.</strong> b<sub>0</sub> est relevé de
+          &frac12;&thinsp;ln(N/(N&nbsp;&minus;&nbsp;p)), ce qui annule le biais vers le bas des
+          largeurs par maximum de vraisemblance. C'est la même correction que diviser par
+          N&nbsp;&minus;&nbsp;1 plutôt que par N dans un écart-type ordinaire.</li>
+      </ul>
     </section>
 
     <!-- ── Orders ─────────────────────────────────────────────────── -->

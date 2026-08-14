@@ -54,9 +54,10 @@ except ImportError:  # pragma: no cover - scipy is a hard dependency in practice
 __all__ = ["PolyBandFit", "fit_polyband", "select_orders"]
 
 
-# For z ~ N(0, sigma):  E[ln|z|] = ln(sigma) + (ln 2 - gamma_Euler) / 2.
-# Used to de-bias the starting guess of the width polynomial.
-_LOG_ABS_NORMAL_OFFSET = 0.5 * (np.log(2.0) - np.euler_gamma)
+# For z ~ N(0, sigma):  E[ln|z|] = ln(sigma) - (gamma_Euler + ln 2) / 2,
+# the second term being about -0.6352. Used to de-bias the starting guess of
+# the width polynomial, which is a fit to ln|residual|.
+_LOG_ABS_NORMAL_OFFSET = -0.5 * (np.euler_gamma + np.log(2.0))
 
 
 @dataclass

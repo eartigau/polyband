@@ -21,7 +21,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scipy.optimize import minimize
+
 from polyband import fit_polyband, plot_diagnostics, plot_polyband, select_orders
+from polyband.core import _neg_log_like
 from polyband.datasets import (
     make_decades,
     make_heavy_tails,
@@ -120,6 +123,23 @@ STRINGS = {
         "uf_rigid": "order_width=0: too rigid",
         "uf_correct": "order_width=1: correct",
         "uf_inside": "{p}% inside 1$\\sigma$ (expected 68%)",
+
+        "opt_a_title": "What one point costs the fit",
+        "opt_a_x": "$\\sigma_{\\rm model}\\,/\\,\\sigma_{\\rm true}$ "
+                   "at that point",
+        "opt_a_y": "expected cost in $-\\ln L$ (nats)",
+        "opt_a_chi2": "$\\frac{1}{2}\\,z^2$ term: punishes a band too narrow",
+        "opt_a_logs": "$\\ln\\sigma$ term: punishes a band too wide",
+        "opt_a_total": "sum: one minimum, at the true width",
+        "opt_b_title": "A band that under- and over-estimates,\n"
+                       "keeping the average width right",
+        "opt_b_y": "$\\sigma_{\\rm model}\\,/\\,\\sigma_{\\rm true}$",
+        "opt_b_tilt": "tilt {a}",
+        "opt_b_fit": "what polyband actually returns",
+        "opt_c_title": "The compensation never pays",
+        "opt_c_x": "tilt applied to $\\ln\\sigma$",
+        "opt_c_y": "excess $-\\ln L$ after refitting\neverything else",
+        "opt_c_n": "N = {n} points",
     },
     "fr": {
         "data": "Données",
@@ -176,6 +196,25 @@ STRINGS = {
         "uf_rigid": f"order_width=0{NB}: trop rigide",
         "uf_correct": f"order_width=1{NB}: correct",
         "uf_inside": f"{{p}}{NB}% dans 1$\\sigma$ (68{NB}% attendu)",
+
+        "opt_a_title": "Ce qu'un seul point coûte à l'ajustement",
+        "opt_a_x": "$\\sigma_{\\rm modèle}\\,/\\,\\sigma_{\\rm vrai}$ "
+                   "en ce point",
+        "opt_a_y": "coût attendu en $-\\ln L$ (nats)",
+        "opt_a_chi2": f"terme $\\frac{{1}}{{2}}\\,z^2${NB}: pénalise "
+                      "une enveloppe trop étroite",
+        "opt_a_logs": f"terme $\\ln\\sigma${NB}: pénalise "
+                      "une enveloppe trop large",
+        "opt_a_total": f"somme{NB}: un seul minimum, à la largeur vraie",
+        "opt_b_title": "Une enveloppe qui sous-estime puis surestime,\n"
+                       "en gardant la largeur moyenne juste",
+        "opt_b_y": "$\\sigma_{\\rm modèle}\\,/\\,\\sigma_{\\rm vrai}$",
+        "opt_b_tilt": "inclinaison {a}",
+        "opt_b_fit": "ce que polyband renvoie réellement",
+        "opt_c_title": "La compensation n'est jamais rentable",
+        "opt_c_x": "inclinaison imposée à $\\ln\\sigma$",
+        "opt_c_y": "excès de $-\\ln L$ après réajustement\nde tout le reste",
+        "opt_c_n": "N = {n} points",
     },
 }
 
@@ -517,6 +556,111 @@ def fig_underfit_width():
     save(fig, "underfit_width")
 
 
+# ----------------------------------------------------------------------
+VIOLET = "#c77dff"
+
+
+def _tilt_profile(n, seed, tilts):
+    """Profile likelihood along a forced tilt of the width polynomial.
+
+    The tilt is added to the coefficient of ``t`` in ``ln sigma``, which makes
+    the band too narrow at one end of the x range and too wide at the other.
+    Every other parameter, the whole trend and the constant term of the width,
+    is then re-optimised: the fit is given every chance to buy the tilt back.
+    The excess is what it still cannot recover.
+    """
+    data = make_trumpet(n=n, seed=seed)
+    fit = fit_polyband(data.x, data.y, 2, 1, dof_correction=False)
+    t = (data.x - fit.x_offset) / fit.x_scale
+    design_mean, design_width = np.vander(t, 3), np.vander(t, 2)
+    p_opt = np.concatenate([fit.coeff_mean, fit.coeff_width])
+    args = (design_mean, design_width, data.y, None, None)
+    nll0 = _neg_log_like(p_opt, *args)
+    slope = fit.coeff_width[0]
+
+    excess = []
+    for a in tilts:
+        def objective(free, a=a):
+            return _neg_log_like(
+                np.array([free[0], free[1], free[2], slope + a, free[3]]), *args
+            )
+        res = minimize(objective, p_opt[[0, 1, 2, 4]], method="Nelder-Mead",
+                       options={"maxiter": 20000, "maxfev": 20000,
+                                "xatol": 1e-10, "fatol": 1e-10})
+        excess.append(float(res.fun) - nll0)
+    return np.array(excess)
+
+
+def fig_optimisation():
+    """Why an under-estimate here cannot be paid for by an over-estimate there.
+
+    Left: the per-point cost of a wrong width, split into its two competing
+    terms. Middle: what a compensating error would look like. Right: the
+    profile likelihood along that compensation, which has a single minimum at
+    zero and rises on both sides.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.2))
+
+    # --- (a) the tug-of-war between the two terms of the likelihood -----
+    ax = axes[0]
+    f = np.logspace(np.log10(0.45), np.log10(2.2), 400)
+    chi2 = 0.5 / f ** 2          # expected value of z^2 / 2 when sigma is f x too big
+    logs = np.log(f)
+    ax.plot(f, chi2 - 0.5, color=WARN, linestyle="--", linewidth=1.6,
+            label=T("opt_a_chi2"))
+    ax.plot(f, logs, color=VIOLET, linestyle="--", linewidth=1.6,
+            label=T("opt_a_logs"))
+    ax.plot(f, chi2 - 0.5 + logs, color=ACCENT, linewidth=2.4,
+            label=T("opt_a_total"))
+    ax.axvline(1.0, color=TRUTH, linestyle=":", linewidth=1.3)
+    ax.axhline(0.0, color=LINE, linewidth=1.0)
+    ax.set_xscale("log")
+    ax.minorticks_off()
+    ax.set_xticks([0.5, 0.7, 1.0, 1.5, 2.0])
+    ax.set_xticklabels([num(v, "{:g}") for v in (0.5, 0.7, 1.0, 1.5, 2.0)])
+    ax.set_ylim(-1.3, 1.15)
+    ax.set_title(T("opt_a_title"), fontsize=10.5)
+    style(ax, xlabel=T("opt_a_x"), ylabel=T("opt_a_y"))
+    ax.legend(fontsize=8, loc="lower center")
+
+    # --- (b) what a compensating error looks like ----------------------
+    ax = axes[1]
+    data = make_trumpet(n=5000, seed=6)
+    fit = fit_polyband(data.x, data.y, 2, 1)
+    grid = fit.grid()
+    t = (grid - fit.x_offset) / fit.x_scale
+    for a, colour in ((-0.2, WARN), (0.2, VIOLET)):
+        ax.plot(grid, np.exp(a * t), color=colour, linewidth=2.0,
+                label=T("opt_b_tilt", a=num(a, "{:+.1f}")))
+    ax.plot(grid, fit.scatter(grid) / data.true_sigma(grid), color=ACCENT,
+            linewidth=2.2, label=T("opt_b_fit"))
+    ax.axhline(1.0, color=TRUTH, linestyle="--", linewidth=1.4)
+    ax.set_ylim(0.72, 1.38)
+    ax.set_title(T("opt_b_title"), fontsize=10.5)
+    style(ax, ylabel=T("opt_b_y"))
+    ax.legend(fontsize=8.5, loc="upper left")
+
+    # --- (c) the price of that compensation ----------------------------
+    ax = axes[2]
+    tilts = np.linspace(-0.35, 0.35, 29)
+    for n, seed, colour, marker in ((450, 0, ACCENT, "o"), (1800, 11, MUTED, "s")):
+        excess = _tilt_profile(n, seed, tilts)
+        ax.plot(tilts, excess, color=colour, linewidth=2.0,
+                label=T("opt_c_n", n=n))
+        for a, spot in ((-0.2, WARN), (0.2, VIOLET)):
+            if n == 450:
+                value = float(np.interp(a, tilts, excess))
+                ax.plot([a], [value], marker=marker, color=spot, markersize=8,
+                        zorder=5)
+    ax.axvline(0.0, color=TRUTH, linestyle=":", linewidth=1.3)
+    ax.set_ylim(bottom=0)
+    ax.set_title(T("opt_c_title"), fontsize=10.5)
+    style(ax, xlabel=T("opt_c_x"), ylabel=T("opt_c_y"))
+    ax.legend(fontsize=8.5, loc="upper center")
+
+    save(fig, "optimisation")
+
+
 def build(lang):
     global LANG, OUT
     LANG = lang
@@ -531,6 +675,7 @@ def build(lang):
     fig_bins()
     fig_diagnostics()
     fig_underfit_width()
+    fig_optimisation()
     return fit
 
 
