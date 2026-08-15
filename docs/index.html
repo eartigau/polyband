@@ -1158,11 +1158,11 @@ print(abs(z).max())       # votre point le plus extrême, en sigma local</code><
     <section class="card span-3">
       <h2><span class="l-en">Samples with outliers</span><span class="l-fr">Échantillons avec valeurs aberrantes</span></h2>
       <p class="l-en">Under a Gaussian likelihood, a handful of far-flung points drags the band
-        open across the whole x range. Setting <code>nu</code> switches to a Student-t
+        open across the whole x range. Setting <code>nu</code><sup class="fn"><a href="#note-t">[5]</a></sup> switches to a Student-t
         likelihood, which stops letting those few points set the width. Values of 3 to 5 are
         strongly resistant; larger values approach the Gaussian case.</p>
       <p class="l-fr">Sous une vraisemblance gaussienne, une poignée de points très éloignés
-        élargit l'enveloppe sur tout l'intervalle en x. Définir <code>nu</code> bascule vers une
+        élargit l'enveloppe sur tout l'intervalle en x. Définir <code>nu</code><sup class="fn"><a href="#note-t">[5]</a></sup> bascule vers une
         vraisemblance de Student, qui empêche ces quelques points de dicter la largeur. Des
         valeurs de 3 à 5 sont très résistantes ; des valeurs plus grandes tendent vers le cas
         gaussien.</p>
@@ -1381,14 +1381,14 @@ u<sub>i</sub> = (&nu; + 1) / (&nu; + z<sub>i</sub><sup>2</sup>)<br>
     <section class="card span-2">
       <h2><span class="l-en">What <code>nu</code> costs, and the calibration trap</span><span class="l-fr">Ce que coûte <code>nu</code>, et le piège de calibration</span></h2>
       <div class="l-en">
-        <p>A Student-t width is the <em>scale parameter of a t distribution</em>, not a standard
+        <p>A Student-t width is the <em>scale parameter of a t distribution</em><sup class="fn"><a href="#note-t">[5]</a></sup>, not a standard
           deviation. On perfectly clean Gaussian data the fitted width comes back systematically
           below the true sd, and <code>envelope(x, 1)</code> is no longer a 68% interval. This is
           not a bug; it is what the parameter means. It does have to be corrected for if you
           intend to read the band as a coverage statement.</p>
       </div>
       <div class="l-fr">
-        <p>Une largeur de Student est le <em>paramètre d'échelle d'une loi de Student</em>, non un
+        <p>Une largeur de Student est le <em>paramètre d'échelle d'une loi de Student</em><sup class="fn"><a href="#note-t">[5]</a></sup>, non un
           écart-type. Sur des données gaussiennes parfaitement propres, la largeur ajustée revient
           systématiquement en dessous de l'écart-type vrai, et <code>envelope(x, 1)</code> n'est
           plus un intervalle à 68&nbsp;%. Ce n'est pas un défaut : c'est le sens du paramètre. Mais
@@ -1503,7 +1503,7 @@ lo, hi = robust.envelope(robust.grid(), nsigma=1.19)</code></pre>
               <th>9%&nbsp;&times;6</th>
               <th>25%&nbsp;&times;6</th>
               <th><span class="l-en">10% one-sided</span><span class="l-fr">10&nbsp;% unilatéraux</span></th>
-              <th><span class="l-en">true t<sub>3</sub> tails</span><span class="l-fr">vraies queues t<sub>3</sub></span></th>
+              <th><span class="l-en">true t<sub>3</sub> tails</span><span class="l-fr">vraies queues t<sub>3</sub></span><sup class="fn"><a href="#note-t">[5]</a></sup></th>
             </tr>
           </thead>
           <tbody>
@@ -1866,7 +1866,7 @@ and for its scatter envelope. Zenodo. https://doi.org/10.5281/zenodo.21954183</c
     <!-- ── Notes and references ───────────────────────────────────── -->
     <section class="card span-3">
       <p class="kicker"><span class="l-en">Notes</span><span class="l-fr">Notes</span></p>
-      <h2><span class="l-en">What AIC and BIC actually are</span><span class="l-fr">Ce que sont réellement l'AIC et le BIC</span></h2>
+      <h2><span class="l-en">What AIC, BIC and t<sub>3</sub> actually are</span><span class="l-fr">Ce que sont réellement l'AIC, le BIC et t<sub>3</sub></span></h2>
 
       <ol class="notelist">
         <li id="note-aic">
@@ -1957,6 +1957,34 @@ and for its scatter envelope. Zenodo. https://doi.org/10.5281/zenodo.21954183</c
             diviser un écart-type ordinaire par N&nbsp;&minus;&nbsp;1 plutôt que par N <a href="#ref-3f">[3f]</a>,
             généralisé à p paramètres ajustés. <code>dof_correction=True</code> le corrige et
             constitue le comportement par défaut.</div>
+        </li>
+
+        <li id="note-t">
+          <span class="num">[5]</span>
+          <div class="l-en"><strong>t<sub>3</sub>, and the Student-t family.</strong>
+            <code>nu</code> is the number of <em>degrees of freedom</em> of a Student-t
+            distribution, written t<sub>&nu;</sub>, and it controls how heavy the tails are.
+            As &nu; grows the distribution becomes a Gaussian: by &nu;&nbsp;=&nbsp;30 the two are
+            already hard to tell apart. As &nu; shrinks the tails thicken. Take
+            t<sub>3</sub>, the column in the table above. Its scale parameter is still called
+            &sigma;, but its standard deviation is &radic;3&nbsp;&sigma;, about 1.73 times
+            larger, and excursions that a Gaussian treats as impossible become ordinary: a
+            3&sigma; departure happens 21 times more often than under a Gaussian, and a 5&sigma;
+            one roughly 27&thinsp;000 times more often. Push further and the family stops being
+            well behaved at all: at &nu;&nbsp;&le;&nbsp;2 the variance is infinite, and at
+            &nu;&nbsp;=&nbsp;1 it is the Cauchy distribution, which has no mean.</div>
+          <div class="l-fr"><strong>t<sub>3</sub>, et la famille de Student.</strong>
+            <code>nu</code> est le nombre de <em>degrés de liberté</em> d'une loi de Student,
+            notée t<sub>&nu;</sub>, et il gouverne l'épaisseur des queues. Quand &nu; croît, la
+            loi tend vers une gaussienne : dès &nu;&nbsp;=&nbsp;30 les deux sont difficiles à
+            distinguer. Quand &nu; diminue, les queues s'épaississent. Prenez t<sub>3</sub>, la
+            colonne du tableau ci-dessus. Son paramètre d'échelle s'appelle toujours &sigma;,
+            mais son écart-type vaut &radic;3&nbsp;&sigma;, environ 1,73 fois plus, et des
+            écarts qu'une gaussienne juge impossibles y deviennent ordinaires : un écart de
+            3&sigma; y survient 21 fois plus souvent que sous une gaussienne, et un écart de
+            5&sigma; environ 27&thinsp;000 fois plus souvent. En poussant plus loin, la famille
+            cesse d'être raisonnable : à &nu;&nbsp;&le;&nbsp;2 la variance est infinie, et à
+            &nu;&nbsp;=&nbsp;1 c'est la loi de Cauchy, qui n'a même pas de moyenne.</div>
         </li>
       </ol>
 
