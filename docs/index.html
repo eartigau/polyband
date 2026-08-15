@@ -340,6 +340,34 @@
       <pre class="codeblock wrap"><code>pip install "git+https://github.com/eartigau/polyband.git@v0.2.0"</code></pre>
     </section>
 
+    <!-- ── Citation ───────────────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="l-en">Citing polyband</span><span class="l-fr">Citer polyband</span></h2>
+      <p class="l-en">If polyband contributes to work you publish, please cite it. GitHub's
+        <em>Cite this repository</em> button reads the <code>CITATION.cff</code> in the
+        repository and hands you BibTeX or APA.</p>
+      <p class="l-fr">Si polyband contribue à un travail que vous publiez, merci de le citer. Le
+        bouton <em>Cite this repository</em> de GitHub lit le fichier <code>CITATION.cff</code> du
+        dépôt et vous donne le BibTeX ou l'APA.</p>
+      <p class="l-en">Two DOIs exist and they are not interchangeable:</p>
+      <p class="l-fr">Il existe deux DOI, et ils ne sont pas interchangeables :</p>
+      <ul class="feature-list">
+        <li><a href="https://doi.org/10.5281/zenodo.21954183"><code>10.5281/zenodo.21954183</code></a><br>
+          <span class="hint l-en">the <strong>concept DOI</strong>, always resolving to the
+            latest version. For a README, a slide, a footnote.</span>
+          <span class="hint l-fr">le <strong>DOI de concept</strong>, qui pointe toujours vers la
+            dernière version. Pour un README, une diapositive, une note.</span></li>
+        <li><a href="https://doi.org/10.5281/zenodo.21954184"><code>10.5281/zenodo.21954184</code></a><br>
+          <span class="hint l-en">the <strong>version DOI</strong> for 0.2.0. Cite this one in a
+            paper: it resolves to a frozen archive of the exact code that produced your
+            numbers.</span>
+          <span class="hint l-fr">le <strong>DOI de version</strong> pour la 0.2.0. C'est celui-là
+            qu'on cite dans un article : il pointe vers une archive figée du code exact ayant
+            produit vos chiffres.</span></li>
+      </ul>
+    </section>
+
+
     <!-- ── Quick start ────────────────────────────────────────────── -->
     <section class="card span-3">
       <h2><span class="l-en">Quick start</span><span class="l-fr">Démarrage rapide</span></h2>
@@ -1823,43 +1851,6 @@ plot_polyband(fit, ax=ax, show_points=False, extrapolate=0.15,
             <tr><td><code>aic</code>, <code>bic</code></td><td><span class="l-en">Information criteria, for comparing degrees<sup class="fn"><a href="#note-aic">[1]</a></sup><sup class="fn"><a href="#note-bic">[2]</a></sup>.</span><span class="l-fr">Critères d'information, pour comparer les degrés<sup class="fn"><a href="#note-aic">[1]</a></sup><sup class="fn"><a href="#note-bic">[2]</a></sup>.</span></td></tr>
           </tbody>
         </table>
-      </div>
-    </section>
-
-    <!-- ── Citation ───────────────────────────────────────────────── -->
-    <section class="card span-3">
-      <h2><span class="l-en">Citing polyband</span><span class="l-fr">Citer polyband</span></h2>
-      <p class="l-en">If polyband contributes to work you publish, please cite it. The
-        repository carries a <code>CITATION.cff</code>, so GitHub's <em>Cite this
-        repository</em> button hands you BibTeX and APA directly.</p>
-      <p class="l-fr">Si polyband contribue à un travail que vous publiez, merci de le citer. Le
-        dépôt contient un fichier <code>CITATION.cff</code> : le bouton <em>Cite this
-        repository</em> de GitHub vous donne donc directement le BibTeX et l'APA.</p>
-      <pre class="codeblock wrap"><code>Artigau, E. (2026). polyband: polynomial regression for the mean relation
-and for its scatter envelope. Zenodo. https://doi.org/10.5281/zenodo.21954183</code></pre>
-      <div class="l-en">
-        <p>Two DOIs exist, and they answer different questions.</p>
-        <ul class="feature-list">
-          <li><a href="https://doi.org/10.5281/zenodo.21954183"><code>10.5281/zenodo.21954183</code></a> is the
-            <strong>concept DOI</strong>. It always resolves to the most recent version, so it is
-            the one for a README, a footnote or a slide.</li>
-          <li><a href="https://doi.org/10.5281/zenodo.21954184"><code>10.5281/zenodo.21954184</code></a> is the
-            <strong>version DOI</strong> for 0.2.0. Cite this one in a paper: it resolves to a
-            frozen archive of the exact code that produced your numbers, which is the whole point
-            of citing software at all.</li>
-        </ul>
-      </div>
-      <div class="l-fr">
-        <p>Il existe deux DOI, et ils répondent à des questions différentes.</p>
-        <ul class="feature-list">
-          <li><a href="https://doi.org/10.5281/zenodo.21954183"><code>10.5281/zenodo.21954183</code></a> est le
-            <strong>DOI de concept</strong>. Il pointe toujours vers la version la plus récente :
-            c'est celui d'un README, d'une note de bas de page ou d'une diapositive.</li>
-          <li><a href="https://doi.org/10.5281/zenodo.21954184"><code>10.5281/zenodo.21954184</code></a> est le
-            <strong>DOI de version</strong> pour la 0.2.0. C'est celui-là qu'il faut citer dans un
-            article : il pointe vers une archive figée du code exact ayant produit vos chiffres,
-            ce qui est toute la raison d'être d'une citation de logiciel.</li>
-        </ul>
       </div>
     </section>
 
