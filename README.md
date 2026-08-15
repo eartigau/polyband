@@ -37,6 +37,22 @@ Because the two are fitted together, the trend is automatically weighted by
 the local scatter: points in the noisy part of the x range pull less on the
 mean than points in the quiet part.
 
+## Citing polyband
+
+If polyband contributes to work you publish, please cite it. GitHub reads the
+`CITATION.cff` in this repository, so the "Cite this repository" button in the
+sidebar will give you BibTeX and APA directly.
+
+```
+Artigau, E. (2026). polyband: polynomial regression for the mean relation
+and for its scatter envelope (version 0.2.0).
+https://github.com/eartigau/polyband
+```
+
+A DOI is on the way through Zenodo; once minted it will appear here and in
+`CITATION.cff`, and it is the identifier to prefer, since it points at a
+frozen archived copy rather than at a branch that keeps moving.
+
 ## Install
 
 ```bash

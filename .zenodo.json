@@ -1,0 +1,36 @@
+{
+  "title": "polyband: polynomial regression for the mean relation and for its scatter envelope",
+  "description": "<p>A polynomial regression that determines two curves at once: the mean relation running through a scatter plot, and the envelope describing how wide the scatter around it is. The trend is a polynomial in x and the logarithm of the width is a second, independent polynomial in x; both are fitted simultaneously by maximum likelihood, so the trend is automatically weighted by the local scatter rather than being fitted first and described afterwards.</p><p>The band it reports is the spread of the population, which converges to the true width as data accumulate, and not the uncertainty on the fitted curve, which shrinks like one over the square root of N. Supports per-point measurement errors, so the fitted width is the intrinsic scatter with the measurement noise removed; fitting in log space for quantities spanning decades; and a Student-t likelihood whose bounded influence applies the same per-point weight to the trend and to the envelope alike.</p><p>Documentation, with the mathematics of the optimisation and the robustness analysis, is at https://eartigau.github.io/polyband/ in English and French.</p>",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Artigau, Etienne",
+      "orcid": "0000-0003-3506-5667",
+      "affiliation": "Université de Montréal"
+    }
+  ],
+  "keywords": [
+    "regression",
+    "polynomial regression",
+    "heteroscedasticity",
+    "robust statistics",
+    "maximum likelihood",
+    "scatter",
+    "astronomy",
+    "Python"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/eartigau/polyband",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://eartigau.github.io/polyband/",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    }
+  ]
+}

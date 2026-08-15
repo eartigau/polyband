@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use polyband in work you publish, please cite it."
+title: polyband
+abstract: >-
+  A polynomial regression that determines two curves at once: the mean
+  relation running through a scatter plot, and the envelope describing how
+  wide the scatter around it is. The trend is a polynomial in x and the
+  logarithm of the width is a second, independent polynomial in x; both are
+  fitted simultaneously by maximum likelihood, so the trend is automatically
+  weighted by the local scatter. Supports measurement errors, log-space
+  fitting, and a Student-t likelihood that bounds the influence of outliers
+  on the trend and on the envelope alike.
+type: software
+authors:
+  - family-names: Artigau
+    given-names: Etienne
+    orcid: "https://orcid.org/0000-0003-3506-5667"
+    affiliation: Université de Montréal
+version: 0.2.0
+license: MIT
+repository-code: "https://github.com/eartigau/polyband"
+url: "https://eartigau.github.io/polyband/"
+keywords:
+  - regression
+  - polynomial regression
+  - heteroscedasticity
+  - robust statistics
+  - scatter
+  - astronomy
