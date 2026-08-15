@@ -121,6 +121,60 @@
   /* A lead-in line above an argument, in the accent colour */
   .card p.lead-in { color: #e8eef8; font-weight: 500; margin-top: 16px; }
 
+  /* Footnote markers and the reference list */
+  sup.fn { font-size: 0.68em; line-height: 0; }
+  sup.fn a {
+    color: var(--accent);
+    text-decoration: none;
+    padding: 0 1px;
+  }
+  sup.fn a:hover { text-decoration: underline; }
+
+  .notelist, .reflist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .notelist > li {
+    display: grid;
+    grid-template-columns: 2.1rem 1fr;
+    gap: 4px 6px;
+    margin: 0 0 14px;
+    color: #d3dff2;
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+  .notelist .num {
+    color: var(--accent);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    padding-top: 2px;
+  }
+  .reflist > li {
+    margin: 0 0 9px;
+    padding-left: 1.1rem;
+    text-indent: -1.1rem;
+    color: var(--muted);
+    line-height: 1.5;
+    font-size: 0.86rem;
+  }
+  .reflist .doi {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.92em;
+  }
+  /* An anchored note should not land under the sticky banner */
+  .notelist > li:target { scroll-margin-top: 90px; }
+  .notelist > li:target .num { color: #fff; }
+
+  .grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 28px;
+  }
+  @media (max-width: 720px) {
+    .grid-2col { grid-template-columns: minmax(0, 1fr); }
+  }
+
   /* Tables */
   table {
     width: 100%;
@@ -517,7 +571,7 @@ plt.show()</code></pre>
             raw values in the thousands is hopelessly ill-conditioned by degree 3.</li>
           <li><strong>Maximum-likelihood widths are biased low</strong> by roughly &radic;((N-p)/N), so
             the fit corrects for it by default. This is the same correction as dividing by
-            N-1 rather than N in a plain standard deviation.</li>
+            N-1 rather than N in a plain standard deviation.<sup class="fn"><a href="#note-dof">[4]</a></sup></li>
         </ul>
       </div>
       <div class="l-fr">
@@ -536,7 +590,7 @@ plt.show()</code></pre>
             mal conditionnée dès le degré 3.</li>
           <li><strong>Les largeurs par maximum de vraisemblance sont biaisées vers le bas</strong>
             d'environ &radic;((N-p)/N) ; la correction est appliquée par défaut. C'est la même
-            correction que diviser par N-1 plutôt que par N dans un écart-type ordinaire.</li>
+            correction que diviser par N-1 plutôt que par N dans un écart-type ordinaire.<sup class="fn"><a href="#note-dof">[4]</a></sup></li>
         </ul>
       </div>
     </section>
@@ -922,11 +976,11 @@ w(z) = (&nu;+1) z<sup>2</sup> / (&nu; + z<sup>2</sup>)
     <!-- ── Choosing orders ────────────────────────────────────────── -->
     <section class="card span-2">
       <h2><span class="l-en">Choosing the degrees</span><span class="l-fr">Choisir les degrés</span></h2>
-      <p class="l-en">If you have no reason to prefer particular degrees, let BIC scan them.
-        It penalises extra parameters more firmly than AIC, which is what you want here: the
+      <p class="l-en">If you have no reason to prefer particular degrees, let BIC<sup class="fn"><a href="#note-bic">[2]</a></sup> scan them.
+        It penalises extra parameters more firmly than AIC<sup class="fn"><a href="#note-aic">[1]</a></sup>, which is what you want here: the
         failure mode to avoid is a width polynomial flexible enough to chase noise.</p>
-      <p class="l-fr">Si rien ne justifie un choix particulier de degrés, laissez le BIC les
-        balayer. Il pénalise les paramètres supplémentaires plus fermement que l'AIC, ce qui
+      <p class="l-fr">Si rien ne justifie un choix particulier de degrés, laissez le BIC<sup class="fn"><a href="#note-bic">[2]</a></sup> les
+        balayer. Il pénalise les paramètres supplémentaires plus fermement que l'AIC<sup class="fn"><a href="#note-aic">[1]</a></sup>, ce qui
         est souhaitable ici : le mode de défaillance à éviter est un polynôme de largeur assez
         souple pour épouser le bruit.</p>
       <pre class="codeblock l-en"><code>from polyband import select_orders
@@ -973,11 +1027,11 @@ for order_mean, order_width, bic in table[:5]:
 # que votre ajustement final.
 fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2, nu=4)</code></pre>
       <p class="callout l-en"><strong>Rule of thumb:</strong> treat a BIC difference below about 2
-        as a tie and keep the simpler model. An over-flexible width is not a harmless extra
+        as a tie<sup class="fn"><a href="#note-delta">[3]</a></sup> and keep the simpler model. An over-flexible width is not a harmless extra
         degree of freedom; it produces a band that wiggles to chase noise and then misstates
         how unusual any given point is.</p>
       <p class="callout l-fr"><strong>Règle empirique :</strong> considérez un écart de BIC
-        inférieur à environ 2 comme une égalité et conservez le modèle le plus simple. Une
+        inférieur à environ 2 comme une égalité<sup class="fn"><a href="#note-delta">[3]</a></sup> et conservez le modèle le plus simple. Une
         largeur trop souple n'est pas un degré de liberté anodin : elle produit une enveloppe
         qui ondule pour suivre le bruit, et donne ensuite une mauvaise mesure du caractère
         atypique de chaque point.</p>
@@ -1759,9 +1813,203 @@ plot_polyband(fit, ax=ax, show_points=False, extrapolate=0.15,
             <tr><td><code>coverage(x, y)</code></td><td><span class="l-en">Observed against expected fraction inside the band.</span><span class="l-fr">Fraction observée dans l'enveloppe, comparée à l'attendu.</span></td></tr>
             <tr><td><code>grid(n, extrapolate)</code></td><td><span class="l-en">An x grid spanning the fitted range, for plotting.</span><span class="l-fr">Une grille en x couvrant l'intervalle ajusté, pour le tracé.</span></td></tr>
             <tr><td><code>summary()</code></td><td><span class="l-en">Human-readable description of the fit.</span><span class="l-fr">Description lisible de l'ajustement.</span></td></tr>
-            <tr><td><code>aic</code>, <code>bic</code></td><td><span class="l-en">Information criteria, for comparing degrees.</span><span class="l-fr">Critères d'information, pour comparer les degrés.</span></td></tr>
+            <tr><td><code>aic</code>, <code>bic</code></td><td><span class="l-en">Information criteria, for comparing degrees<sup class="fn"><a href="#note-aic">[1]</a></sup><sup class="fn"><a href="#note-bic">[2]</a></sup>.</span><span class="l-fr">Critères d'information, pour comparer les degrés<sup class="fn"><a href="#note-aic">[1]</a></sup><sup class="fn"><a href="#note-bic">[2]</a></sup>.</span></td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- ── Notes and references ───────────────────────────────────── -->
+    <section class="card span-3">
+      <p class="kicker"><span class="l-en">Notes</span><span class="l-fr">Notes</span></p>
+      <h2><span class="l-en">What AIC and BIC actually are</span><span class="l-fr">Ce que sont réellement l'AIC et le BIC</span></h2>
+
+      <ol class="notelist">
+        <li id="note-aic">
+          <span class="num">[1]</span>
+          <div class="l-en"><strong>AIC, the Akaike information criterion</strong>, is
+            2p&nbsp;&minus;&nbsp;2&thinsp;ln&thinsp;L, where p is the number of free parameters
+            and L the likelihood at the optimum. Adding a parameter always raises the
+            likelihood, so the fit alone can never tell you to stop; the 2p term is the price.
+            What Akaike showed is that this particular price makes the criterion an estimate of
+            how much information is lost by using the model instead of the truth, up to a
+            constant common to all the candidates. Two consequences follow. Only
+            <em>differences</em> between AIC values mean anything, never one value on its own.
+            And AIC aims at predicting well, not at identifying a true model: it does not
+            assume the truth is among the candidates, and it does not become certain as the
+            sample grows. See <a href="#ref-1a">[1a]</a>, <a href="#ref-1c">[1c]</a>.</div>
+          <div class="l-fr"><strong>L'AIC, critère d'information d'Akaike</strong>, vaut
+            2p&nbsp;&minus;&nbsp;2&thinsp;ln&thinsp;L, où p est le nombre de paramètres libres
+            et L la vraisemblance à l'optimum. Ajouter un paramètre augmente toujours la
+            vraisemblance : l'ajustement seul ne peut donc jamais vous dire de vous arrêter, et
+            le terme 2p est le prix à payer. Ce qu'Akaike a montré, c'est que ce prix-là fait du
+            critère une estimation de la quantité d'information perdue en utilisant le modèle
+            plutôt que la réalité, à une constante près commune à tous les candidats. Deux
+            conséquences. Seules les <em>différences</em> d'AIC ont un sens, jamais une valeur
+            isolée. Et l'AIC vise à bien prédire, non à identifier un modèle vrai : il ne
+            suppose pas que la vérité figure parmi les candidats, et il ne devient pas certain
+            quand l'échantillon grandit. Voir <a href="#ref-1a">[1a]</a>, <a href="#ref-1c">[1c]</a>.</div>
+        </li>
+
+        <li id="note-bic">
+          <span class="num">[2]</span>
+          <div class="l-en"><strong>BIC, the Bayesian information criterion</strong>, is
+            p&thinsp;ln&thinsp;N&nbsp;&minus;&nbsp;2&thinsp;ln&thinsp;L. Same shape, different
+            price: ln&thinsp;N instead of 2. It comes from a different question, namely an
+            approximation to the probability the data assign to each model after integrating
+            over its parameters, so it estimates which model <em>generated</em> the data rather
+            than which will predict best. Because the penalty grows with the sample, BIC keeps
+            demanding more evidence for each extra parameter as data accumulate, and it will
+            settle on the true model given enough of them, if the true model is among the
+            candidates. From 8 points on, ln&thinsp;N exceeds 2, so BIC is the stricter of the
+            two for any realistic sample. See <a href="#ref-1b">[1b]</a>, <a href="#ref-1d">[1d]</a>.</div>
+          <div class="l-fr"><strong>Le BIC, critère d'information bayésien</strong>, vaut
+            p&thinsp;ln&thinsp;N&nbsp;&minus;&nbsp;2&thinsp;ln&thinsp;L. Même forme, prix
+            différent : ln&thinsp;N au lieu de 2. Il découle d'une autre question, à savoir une
+            approximation de la probabilité que les données accordent à chaque modèle après
+            intégration sur ses paramètres ; il estime donc quel modèle a <em>engendré</em> les
+            données plutôt que lequel prédira le mieux. Comme la pénalité croît avec
+            l'échantillon, le BIC exige toujours plus de preuves pour chaque paramètre
+            supplémentaire à mesure que les données s'accumulent, et il finit par retenir le
+            modèle vrai s'il figure parmi les candidats. Dès 8 points, ln&thinsp;N dépasse 2 :
+            le BIC est donc le plus strict des deux pour tout échantillon réaliste. Voir
+            <a href="#ref-1b">[1b]</a>, <a href="#ref-1d">[1d]</a>.</div>
+        </li>
+
+        <li id="note-delta">
+          <span class="num">[3]</span>
+          <div class="l-en"><strong>Why a difference below about 2 counts as a tie.</strong>
+            A BIC difference is roughly twice the logarithm of the Bayes factor between the two
+            models, and on the scale Kass and Raftery <a href="#ref-2a">[2a]</a> set out for reading Bayes factors,
+            that bottom band is the one they describe as not worth more than a bare mention.
+            The same threshold is conventional for AIC. This is why <code>select_orders</code>
+            gives you the whole ranking rather than only the winner: if the top few are within
+            2 of each other, the criterion has not chosen anything, and the simplest of them is
+            the one to keep.</div>
+          <div class="l-fr"><strong>Pourquoi un écart inférieur à environ 2 vaut une
+            égalité.</strong> Un écart de BIC vaut approximativement deux fois le logarithme du
+            facteur de Bayes entre les deux modèles, et sur l'échelle proposée par Kass et
+            Raftery <a href="#ref-2a">[2a]</a> pour lire les facteurs de Bayes, cette première bande est celle qu'ils
+            décrivent comme ne méritant pas plus qu'une simple mention. Le même seuil est
+            d'usage pour l'AIC. C'est pourquoi <code>select_orders</code> vous renvoie tout le
+            classement et pas seulement le gagnant : si les premiers sont à moins de 2 les uns
+            des autres, le critère n'a rien tranché, et c'est le plus simple qu'il faut
+            retenir.</div>
+        </li>
+
+        <li id="note-dof">
+          <span class="num">[4]</span>
+          <div class="l-en"><strong>Why maximum-likelihood widths come out too narrow.</strong>
+            The fitted trend follows the noise a little, so the residuals around it are
+            systematically smaller than the true deviations, by a factor of about
+            &radic;((N&nbsp;&minus;&nbsp;p)/N). This is the same effect that makes a plain
+            standard deviation divide by N&nbsp;&minus;&nbsp;1 rather than N <a href="#ref-3f">[3f]</a>, generalised
+            to p fitted parameters. <code>dof_correction=True</code> undoes it and is the
+            default.</div>
+          <div class="l-fr"><strong>Pourquoi les largeurs par maximum de vraisemblance sont trop
+            étroites.</strong> La tendance ajustée épouse un peu le bruit, de sorte que les
+            résidus autour d'elle sont systématiquement plus petits que les écarts vrais, d'un
+            facteur d'environ &radic;((N&nbsp;&minus;&nbsp;p)/N). C'est le même effet qui fait
+            diviser un écart-type ordinaire par N&nbsp;&minus;&nbsp;1 plutôt que par N <a href="#ref-3f">[3f]</a>,
+            généralisé à p paramètres ajustés. <code>dof_correction=True</code> le corrige et
+            constitue le comportement par défaut.</div>
+        </li>
+      </ol>
+
+      <p class="kicker" style="margin-top:22px"><span class="l-en">References</span><span class="l-fr">Références</span></p>
+
+      <div class="grid-2col">
+        <div>
+          <p class="hint" style="margin-bottom:8px"><strong><span class="l-en">Model selection</span><span class="l-fr">Sélection de modèles</span></strong></p>
+          <ul class="reflist">
+            <li id="ref-1a">[1a] Akaike, H. (1974). A new look at the statistical model identification.
+              <em>IEEE Transactions on Automatic Control</em> <strong>19</strong>, 716&ndash;723.
+              <a class="doi" href="https://doi.org/10.1109/TAC.1974.1100705">doi:10.1109/TAC.1974.1100705</a></li>
+            <li id="ref-1b">[1b] Schwarz, G. (1978). Estimating the dimension of a model.
+              <em>The Annals of Statistics</em> <strong>6</strong>, 461&ndash;464.
+              <a class="doi" href="https://doi.org/10.1214/aos/1176344136">doi:10.1214/aos/1176344136</a></li>
+            <li id="ref-1c">[1c] Cavanaugh, J. E. &amp; Neath, A. A. (2019). The Akaike information
+              criterion: background, derivation, properties, application, interpretation, and
+              refinements. <em>WIREs Computational Statistics</em> <strong>11</strong>, e1460.
+              <a class="doi" href="https://doi.org/10.1002/wics.1460">doi:10.1002/wics.1460</a></li>
+            <li id="ref-1d">[1d] Neath, A. A. &amp; Cavanaugh, J. E. (2012). The Bayesian information
+              criterion: background, derivation, and applications.
+              <em>WIREs Computational Statistics</em> <strong>4</strong>, 199&ndash;203.
+              <a class="doi" href="https://doi.org/10.1002/wics.199">doi:10.1002/wics.199</a></li>
+            <li id="ref-2a">[2a] Kass, R. E. &amp; Raftery, A. E. (1995). Bayes factors.
+              <em>Journal of the American Statistical Association</em> <strong>90</strong>,
+              773&ndash;795.
+              <a class="doi" href="https://doi.org/10.1080/01621459.1995.10476572">doi:10.1080/01621459.1995.10476572</a></li>
+          </ul>
+
+          <p class="hint" style="margin:16px 0 8px"><strong><span class="l-en">Robustness and outliers</span><span class="l-fr">Robustesse et valeurs aberrantes</span></strong></p>
+          <ul class="reflist">
+            <li id="ref-2b">[2b] Huber, P. J. (1964). Robust estimation of a location parameter.
+              <em>The Annals of Mathematical Statistics</em> <strong>35</strong>, 73&ndash;101.
+              <a class="doi" href="https://doi.org/10.1214/aoms/1177703732">doi:10.1214/aoms/1177703732</a></li>
+            <li id="ref-2c">[2c] Lange, K. L., Little, R. J. A. &amp; Taylor, J. M. G. (1989). Robust
+              statistical modeling using the t distribution.
+              <em>Journal of the American Statistical Association</em> <strong>84</strong>,
+              881&ndash;896.
+              <a class="doi" href="https://doi.org/10.1080/01621459.1989.10478852">doi:10.1080/01621459.1989.10478852</a>
+              <span class="l-en">&mdash; the paper behind the <code>nu</code> option</span><span class="l-fr">&mdash; l'article derrière l'option <code>nu</code></span></li>
+            <li id="ref-2d">[2d] Rousseeuw, P. J. (1984). Least median of squares regression.
+              <em>Journal of the American Statistical Association</em> <strong>79</strong>,
+              871&ndash;880.
+              <a class="doi" href="https://doi.org/10.1080/01621459.1984.10477105">doi:10.1080/01621459.1984.10477105</a>
+              <span class="l-en">&mdash; the trimmed idea behind the starting guess</span><span class="l-fr">&mdash; l'idée de troncature derrière le point de départ</span></li>
+            <li id="ref-2e">[2e] Rousseeuw, P. J. &amp; Croux, C. (1993). Alternatives to the median
+              absolute deviation.
+              <em>Journal of the American Statistical Association</em> <strong>88</strong>,
+              1273&ndash;1283.
+              <a class="doi" href="https://doi.org/10.1080/01621459.1993.10476408">doi:10.1080/01621459.1993.10476408</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="hint" style="margin-bottom:8px"><strong><span class="l-en">Likelihood, information, resampling</span><span class="l-fr">Vraisemblance, information, rééchantillonnage</span></strong></p>
+          <ul class="reflist">
+            <li id="ref-3a">[3a] Kullback, S. &amp; Leibler, R. A. (1951). On information and sufficiency.
+              <em>The Annals of Mathematical Statistics</em> <strong>22</strong>, 79&ndash;86.
+              <a class="doi" href="https://doi.org/10.1214/aoms/1177729694">doi:10.1214/aoms/1177729694</a>
+              <span class="l-en">&mdash; the divergence that makes the band uncompensatable</span><span class="l-fr">&mdash; la divergence qui rend l'enveloppe non compensable</span></li>
+            <li id="ref-3b">[3b] Dempster, A. P., Laird, N. M. &amp; Rubin, D. B. (1977). Maximum
+              likelihood from incomplete data via the EM algorithm.
+              <em>Journal of the Royal Statistical Society Series B</em> <strong>39</strong>,
+              1&ndash;22.
+              <a class="doi" href="https://doi.org/10.1111/j.2517-6161.1977.tb01600.x">doi:10.1111/j.2517-6161.1977.tb01600.x</a></li>
+            <li id="ref-3c">[3c] Efron, B. (1979). Bootstrap methods: another look at the jackknife.
+              <em>The Annals of Statistics</em> <strong>7</strong>, 1&ndash;26.
+              <a class="doi" href="https://doi.org/10.1214/aos/1176344552">doi:10.1214/aos/1176344552</a>
+              <span class="l-en">&mdash; the <code>n_bootstrap</code> option</span><span class="l-fr">&mdash; l'option <code>n_bootstrap</code></span></li>
+            <li id="ref-3d">[3d] Nelder, J. A. &amp; Mead, R. (1965). A simplex method for function
+              minimization. <em>The Computer Journal</em> <strong>7</strong>, 308&ndash;313.
+              <a class="doi" href="https://doi.org/10.1093/comjnl/7.4.308">doi:10.1093/comjnl/7.4.308</a></li>
+          </ul>
+
+          <p class="hint" style="margin:16px 0 8px"><strong><span class="l-en">Background reading</span><span class="l-fr">Pour aller plus loin</span></strong></p>
+          <ul class="reflist">
+            <li id="ref-3e">[3e] <a class="l-en" href="https://en.wikipedia.org/wiki/Akaike_information_criterion">Akaike information criterion</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Crit%C3%A8re_d%27information_d%27Akaike">Critère d'information d'Akaike</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Bayesian_information_criterion">Bayesian information criterion</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Crit%C3%A8re_d%27information_bay%C3%A9sien">Critère d'information bayésien</a></li>
+            <li id="ref-3f">[3f] <a class="l-en" href="https://en.wikipedia.org/wiki/Maximum_likelihood_estimation">Maximum likelihood estimation</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Maximum_de_vraisemblance">Maximum de vraisemblance</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Bessel%27s_correction">Bessel's correction</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Correction_de_Bessel">Correction de Bessel</a></li>
+            <li id="ref-3g">[3g] <a class="l-en" href="https://en.wikipedia.org/wiki/Polynomial_regression">Polynomial regression</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/R%C3%A9gression_polynomiale">Régression polynomiale</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Homoscedasticity_and_heteroscedasticity">Heteroscedasticity</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/H%C3%A9t%C3%A9rosc%C3%A9dasticit%C3%A9">Hétéroscédasticité</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Vandermonde_matrix">Vandermonde matrix</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Matrice_de_Vandermonde">Matrice de Vandermonde</a></li>
+            <li id="ref-3h">[3h] <a class="l-en" href="https://en.wikipedia.org/wiki/Robust_statistics">Robust statistics</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Robustesse_(statistiques)">Robustesse (statistiques)</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/M-estimator">M-estimator</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/M-estimateur">M-estimateur</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Robust_statistics#Influence_function_and_sensitivity_curve">influence function</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Fonction_d%27influence">fonction d'influence</a></li>
+            <li id="ref-3i">[3i] <a class="l-en" href="https://en.wikipedia.org/wiki/Student%27s_t-distribution">Student's t-distribution</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Loi_de_Student">Loi de Student</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Mixture_model">Mixture model</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Mod%C3%A8le_de_m%C3%A9lange">Modèle de mélange</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm">EM algorithm</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Algorithme_esp%C3%A9rance-maximisation">algorithme espérance-maximisation</a></li>
+            <li id="ref-3j">[3j] <a class="l-en" href="https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence">Kullback&ndash;Leibler divergence</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Divergence_de_Kullback-Leibler">Divergence de Kullback-Leibler</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot">Q&ndash;Q plot</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Diagramme_quantile-quantile">Diagramme quantile-quantile</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Errors_and_residuals">residuals</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/R%C3%A9sidu_(statistiques)">résidus</a></li>
+            <li id="ref-3k">[3k] <a class="l-en" href="https://en.wikipedia.org/wiki/Bootstrapping_(statistics)">Bootstrapping</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/Bootstrap_(statistiques)">Bootstrap (statistiques)</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method">Nelder&ndash;Mead</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/M%C3%A9thode_de_Nelder-Mead">Méthode de Nelder-Mead</a>
+              &middot; <a class="l-en" href="https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm">BFGS</a><a class="l-fr" href="https://fr.wikipedia.org/wiki/M%C3%A9thode_de_Broyden-Fletcher-Goldfarb-Shanno">BFGS</a></li>
+          </ul>
+        </div>
       </div>
     </section>
 
