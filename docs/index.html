@@ -263,7 +263,7 @@
         <p>You have a cloud of points and you want two things from it: where the middle
           of the cloud goes, and how thick the cloud is. The second question is usually
           the interesting one, because it is what lets you say whether a particular
-          object is unusual. The usual approaches each fall short.</p>
+          value is unusual. The usual approaches each fall short.</p>
         <ul class="feature-list">
           <li><strong>Binning in x</strong> gives a jumpy answer that depends on the bin width,
             says nothing between bin centres, and wastes points near the edges.</li>
@@ -284,8 +284,8 @@
       <div class="l-fr">
         <p>Vous avez un nuage de points et vous voulez en tirer deux choses : où passe le
           milieu du nuage, et quelle est son épaisseur. La deuxième question est
-          généralement la plus intéressante, puisque c'est elle qui permet de dire si un
-          objet donné est atypique. Les approches habituelles sont toutes insatisfaisantes.</p>
+          généralement la plus intéressante, puisque c'est elle qui permet de dire si une
+          valeur donnée est atypique. Les approches habituelles sont toutes insatisfaisantes.</p>
         <ul class="feature-list">
           <li><strong>Le binning en x</strong> donne une réponse en dents de scie qui dépend de la
             largeur des intervalles, ne dit rien entre les centres des bins, et gaspille les
@@ -494,18 +494,17 @@ plt.show()</code></pre>
       <p class="kicker"><span class="l-en">The key distinction</span><span class="l-fr">La distinction essentielle</span></p>
       <h2><span class="l-en">The band is not the uncertainty on the trend</span><span class="l-fr">L'enveloppe n'est pas l'incertitude sur la tendance</span></h2>
       <div class="l-en">
-        <p>These are two different quantities, and mixing them up is the single most common
-          mistake in this kind of plot. The uncertainty on the trend comes from the
-          coefficient covariance matrix and shrinks like 1/&radic;N. The band describes where
-          the points are, and does not shrink at all: with more data it simply converges on
-          the true population width.</p>
+        <p>These are two different quantities, not to be confused. The uncertainty on the
+          trend comes from the coefficient covariance matrix and shrinks like 1/&radic;N. The
+          band describes where the points are, and does not shrink at all: with more data it
+          simply converges on the true population width.</p>
       </div>
       <div class="l-fr">
-        <p>Ce sont deux quantités distinctes, et les confondre est l'erreur la plus fréquente
-          dans ce genre de figure. L'incertitude sur la tendance provient de la matrice de
-          covariance des coefficients et décroît en 1/&radic;N. L'enveloppe décrit où se
-          trouvent les points, et ne rétrécit pas du tout : avec davantage de données, elle
-          converge simplement vers la largeur réelle de la population.</p>
+        <p>Ce sont deux quantités distinctes, à ne pas confondre. L'incertitude sur la
+          tendance provient de la matrice de covariance des coefficients et décroît en
+          1/&radic;N. L'enveloppe décrit où se trouvent les points, et ne rétrécit pas du
+          tout : avec davantage de données, elle converge simplement vers la largeur réelle
+          de la population.</p>
       </div>
       <figure class="fig">
         <img data-fig="band_vs_error" src="figures/en/band_vs_error.svg" loading="lazy" alt="Left: both bands on one sample. Right: their behaviour with sample size." />
@@ -537,7 +536,7 @@ plt.show()</code></pre>
               <td><code>fit.envelope(x)</code></td>
               <td><span class="l-en">where the <strong>points</strong> lie</span><span class="l-fr">où se trouvent les <strong>points</strong></span></td>
               <td><span class="l-en">converges to the true spread</span><span class="l-fr">converge vers la dispersion vraie</span></td>
-              <td><span class="l-en">is this object unusual?</span><span class="l-fr">cet objet est-il atypique ?</span></td>
+              <td><span class="l-en">is this value unusual?</span><span class="l-fr">cette valeur est-elle atypique ?</span></td>
             </tr>
             <tr>
               <td><code>fit.trend_band(x)</code></td>

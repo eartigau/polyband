@@ -188,7 +188,7 @@ plainly:
 
 ![band versus trend error](docs/figures/en/band_vs_error.svg)
 
-If you are asking "is this object unusual compared to the population?", you
+If you are asking "is this value unusual compared to the population?", you
 want the first one. If you are asking "how well do I know the mean relation?",
 you want the second.
 
