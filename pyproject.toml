@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "polyband"
 version = "0.2.0"
-description = "Polynomial regression that determines both the mean relation and its scatter envelope"
+description = "Polynomial regression that determines the mean relation and its scatter envelope, with outlier resistance built in"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
