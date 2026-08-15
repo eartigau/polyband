@@ -23,10 +23,17 @@ import numpy as np
 from polyband import fit_polyband
 from polyband.datasets import make_decades
 
+# ----------------------------------------------------------------------
+# 1. A quantity that spans decades, with multiplicative scatter
+# ----------------------------------------------------------------------
 data = make_decades(n=400, seed=2)
 print(f"y spans {data.y.min():.2g} to {data.y.max():.2g}, "
       f"a factor of {data.y.max() / data.y.min():.0f}")
 
+# ----------------------------------------------------------------------
+# 2. The same data fitted both ways, so the two can be compared directly
+# ----------------------------------------------------------------------
+# Identical degrees, identical data: the ONLY difference is log_y.
 linear = fit_polyband(data.x, data.y, 2, 1)
 log = fit_polyband(data.x, data.y, 2, 1, log_y=True)
 
@@ -35,15 +42,27 @@ print(f"\nfitted in y      : width at x=5 is {linear.scatter(5.0):.2f} "
 print(f"fitted in log10(y): width at x=5 is {log.scatter(5.0):.3f} "
       f"{log.width_units}, i.e. a factor of {10 ** log.scatter(5.0):.2f}")
 
+# ----------------------------------------------------------------------
+# 3. Why the linear fit is not merely worse but impossible
+# ----------------------------------------------------------------------
+# A Gaussian band in y is symmetric, so for a positive quantity with large
+# scatter its lower edge has to cross zero somewhere. No choice of degree
+# fixes that; only changing the variable does.
 grid = np.linspace(0, 10, 200)
 below_zero = (linear.envelope(grid)[0] < 0).mean()
 print(f"\nthe linear-space band dips below zero over {below_zero:.0%} of the "
       f"x range, which is impossible for a positive quantity")
 
+# ----------------------------------------------------------------------
+# 4. The log-space band is properly calibrated
+# ----------------------------------------------------------------------
 print("\ncoverage of the log-space band:")
 for nsigma, observed, expected in log.coverage(data.x, data.y):
     print(f"  {nsigma:.0f} sigma: {observed:.1%} observed, {expected:.1%} expected")
 
+# ----------------------------------------------------------------------
+# 5. Draw both, with a log y axis on the right so the band reads as a strip
+# ----------------------------------------------------------------------
 fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
 for ax, fit, title in ((axes[0], linear, "log_y=False"),
                        (axes[1], log, "log_y=True")):
@@ -63,8 +82,13 @@ fig.tight_layout()
 fig.savefig(out)
 print(f"\nSaved: {out}")
 
-# Standardised deviations work through the transform, so an external point can
-# be compared to the population without doing the log arithmetic yourself.
+# ----------------------------------------------------------------------
+# 6. Nothing downstream needs to know about the transform
+# ----------------------------------------------------------------------
+# zscore takes y in its original units and handles the log internally, so an
+# external object can be compared to the population without you redoing the
+# arithmetic. Note the asymmetry the log space implies: a factor of 10 above
+# the trend and a factor of 10 below are the same distance in sigma.
 for value in (3.0, 30.0):
     print(f"a point at x=5, y={value:g} sits at "
           f"{float(log.zscore(5.0, value)):+.2f} sigma")

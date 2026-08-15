@@ -18,10 +18,25 @@ import numpy as np
 from polyband import fit_polyband, plot_diagnostics, select_orders
 from polyband.datasets import make_trumpet
 
+# ----------------------------------------------------------------------
+# 1. Data whose true degrees are known, so the answer can be graded
+# ----------------------------------------------------------------------
+# make_trumpet generates a quadratic trend (order_mean=2) with a width that
+# is an exponential of a linear function, i.e. ln(sigma) linear in x
+# (order_width=1). A correct selection should land on exactly that pair.
 data = make_trumpet(n=500, seed=12)
 
+# ----------------------------------------------------------------------
+# 2. Let BIC scan the grid
+# ----------------------------------------------------------------------
+# Every combination from (0, 0) to (4, 2) is fitted and scored, 15 fits in
+# all. Combinations that fail are skipped rather than raising. `best` comes
+# back already fitted, so there is nothing to redo afterwards.
 best, table = select_orders(data.x, data.y, max_order_mean=4, max_order_width=2)
 
+# `table` is (order_mean, order_width, criterion), best first. Print the
+# delta against the winner rather than the raw values: only differences
+# mean anything, and a delta under about 2 is a tie.
 print("order_mean  order_width       BIC   delta")
 best_bic = table[0][2]
 for order_mean, order_width, bic in table[:8]:
@@ -30,17 +45,26 @@ for order_mean, order_width, bic in table[:8]:
 print(f"\nSelected: order_mean={best.order_mean}, order_width={best.order_width}")
 print(f"Truth for this dataset: order_mean=2, order_width=1")
 
-# The information criterion tells you which model is preferred; the residual
-# diagnostics tell you whether the winner is actually adequate. Both matter,
-# and they answer different questions.
+# ----------------------------------------------------------------------
+# 3. Check the winner is actually adequate
+# ----------------------------------------------------------------------
+# The information criterion says which candidate is preferred; it cannot say
+# whether the preferred one is any good, because it only ever compares the
+# models you offered it. The residual diagnostics answer that second
+# question. Both matter, and they are not interchangeable.
 fig = plot_diagnostics(best, data.x, data.y)
 out = Path(__file__).resolve().parent / "choosing_orders.pdf"
 fig.savefig(out)
 print(f"\nSaved: {out}")
 
+# ----------------------------------------------------------------------
+# 4. Quantify the funnel instead of eyeballing it
+# ----------------------------------------------------------------------
 # A width polynomial of too low an order leaves a funnel in the standardised
-# residuals, which is easy to quantify: their spread should be 1 in every
-# slice of x, not just on average.
+# residuals. The fit forces their spread to be 1 ON AVERAGE whatever the
+# degree, so the average tells you nothing; what breaks is the spread within
+# each slice of x. order_width=0 below is visibly wrong slice by slice while
+# still averaging to 1, which is exactly the failure to watch for.
 print("\nspread of standardised residuals, by quarter of the x range:")
 for order_width in (0, 1):
     fit = fit_polyband(data.x, data.y, order_mean=2, order_width=order_width)

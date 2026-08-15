@@ -299,16 +299,139 @@ pytest</code></pre>
         celui de <code>ln(sigma)</code>. Ils sont indépendants, et c'est là tout l'intérêt :
         une tendance courbe avec une enveloppe de largeur constante est une combinaison
         parfaitement ordinaire, tout comme une tendance droite dont la dispersion augmente.</p>
-      <pre class="codeblock"><code>import matplotlib.pyplot as plt
+      <p class="hint l-en">Copy the whole block and run it: it builds its own data, so it works
+        before you have plugged in yours. Every number printed below is what you should
+        actually see.</p>
+      <p class="hint l-fr">Copiez le bloc entier et exécutez-le : il fabrique ses propres données,
+        donc il fonctionne avant même que vous n'y branchiez les vôtres. Chaque valeur indiquée
+        ci-dessous est bien celle que vous devriez obtenir.</p>
+      <pre class="codeblock l-en"><code>import numpy as np
+import matplotlib.pyplot as plt
 from polyband import fit_polyband, plot_polyband
 
+# ---------------------------------------------------------------------
+# 1. The data. Replace this whole block with your own x and y.
+# ---------------------------------------------------------------------
+rng = np.random.default_rng(0)
+
+# 400 points spread over the x range you care about.
+x = rng.uniform(0, 10, 400)
+
+# The curve the points scatter around: a parabola that bends back down.
+trend = 3.0 + 1.1 * x - 0.075 * x**2
+
+# How wide that scatter is. The point of the package is that this is NOT
+# a constant: it grows from 0.30 at x = 0 to 4.95 at x = 10. A single
+# global RMS would be wrong at both ends at once.
+sigma = np.exp(-1.2 + 0.28 * x)
+
+# One draw per point, each from its own local sigma.
+y = trend + rng.normal(0.0, sigma)
+
+# ---------------------------------------------------------------------
+# 2. The fit. Two degrees, chosen independently of each other.
+# ---------------------------------------------------------------------
+#   order_mean=2  : the trend is a parabola, so degree 2.
+#   order_width=1 : sigma is an exponential of x, so ln(sigma) is a
+#                   straight line, so degree 1.
+# Both polynomials are fitted at the same time by maximum likelihood,
+# which is what lets the trend be weighted by the local scatter.
 fit = fit_polyband(x, y, order_mean=2, order_width=1)
 
-print(fit.summary())
-print(fit.predict(5.0))       # trend at x = 5
-print(fit.scatter(5.0))       # half-width of the 1-sigma band at x = 5
-print(fit.zscore(5.0, 12.3))  # how unusual a point is, in sigma
+# ---------------------------------------------------------------------
+# 3. Reading the result.
+# ---------------------------------------------------------------------
+print(fit.summary())          # degrees, N, x range, log L, AIC and BIC
 
+print(fit.predict(5.0))       # the trend at x = 5              -> 6.610
+print(fit.scatter(5.0))       # half-width of the 1-sigma band  -> 1.234
+print(fit.envelope(5.0))      # the two band edges at x = 5     -> (5.376, 7.844)
+print(fit.zscore(5.0, 12.3))  # is y = 12.3 unusual at x = 5?   -> 4.61 sigma
+
+# ---------------------------------------------------------------------
+# 4. Check it before you trust it.
+# ---------------------------------------------------------------------
+# About 68% of the points belong inside the 1-sigma band and 95% inside
+# 2 sigma. A band nobody has checked is decoration, not a measurement.
+for nsigma, observed, expected in fit.coverage(x, y):
+    print(f"{nsigma:.0f} sigma: {observed:.1%} observed vs {expected:.1%} expected")
+# 1 sigma: 66.0% observed vs 68.3% expected
+# 2 sigma: 96.2% observed vs 95.4% expected
+# 3 sigma: 99.8% observed vs 99.7% expected
+
+# ---------------------------------------------------------------------
+# 5. Draw it.
+# ---------------------------------------------------------------------
+# nsigma=(1, 2) nests two bands. plot_polyband draws on the axis you give
+# it, never calls show() or legend() itself, and hands back every artist
+# it created so you can restyle afterwards.
+art = plot_polyband(fit, x, y, nsigma=(1, 2))
+art.ax.legend(handles=art.legend_handles)
+plt.show()</code></pre>
+      <pre class="codeblock l-fr"><code>import numpy as np
+import matplotlib.pyplot as plt
+from polyband import fit_polyband, plot_polyband
+
+# ---------------------------------------------------------------------
+# 1. Les données. Remplacez tout ce bloc par vos propres x et y.
+# ---------------------------------------------------------------------
+rng = np.random.default_rng(0)
+
+# 400 points répartis sur l'intervalle en x qui vous intéresse.
+x = rng.uniform(0, 10, 400)
+
+# La courbe autour de laquelle les points se dispersent : une parabole
+# qui finit par redescendre.
+trend = 3.0 + 1.1 * x - 0.075 * x**2
+
+# L'ampleur de cette dispersion. Tout l'intérêt du module est qu'elle
+# n'est PAS constante : elle passe de 0,30 en x = 0 à 4,95 en x = 10.
+# Un unique écart-type global se tromperait aux deux bouts à la fois.
+sigma = np.exp(-1.2 + 0.28 * x)
+
+# Un tirage par point, chacun selon son sigma local.
+y = trend + rng.normal(0.0, sigma)
+
+# ---------------------------------------------------------------------
+# 2. L'ajustement. Deux degrés, choisis indépendamment l'un de l'autre.
+# ---------------------------------------------------------------------
+#   order_mean=2  : la tendance est une parabole, donc degré 2.
+#   order_width=1 : sigma est une exponentielle de x, donc ln(sigma) est
+#                   une droite, donc degré 1.
+# Les deux polynômes sont ajustés simultanément par maximum de
+# vraisemblance, ce qui permet de pondérer la tendance par la
+# dispersion locale.
+fit = fit_polyband(x, y, order_mean=2, order_width=1)
+
+# ---------------------------------------------------------------------
+# 3. Lire le résultat.
+# ---------------------------------------------------------------------
+print(fit.summary())          # degrés, N, intervalle en x, log L, AIC et BIC
+
+print(fit.predict(5.0))       # la tendance en x = 5              -> 6,610
+print(fit.scatter(5.0))       # demi-largeur de l'enveloppe à 1s  -> 1,234
+print(fit.envelope(5.0))      # les deux bords en x = 5           -> (5,376 ; 7,844)
+print(fit.zscore(5.0, 12.3))  # y = 12,3 est-il atypique en x = 5 ? -> 4,61 sigma
+
+# ---------------------------------------------------------------------
+# 4. Vérifiez avant de faire confiance.
+# ---------------------------------------------------------------------
+# Environ 68 % des points doivent tomber dans l'enveloppe à 1 sigma, et
+# 95 % dans celle à 2 sigma. Une enveloppe que personne n'a vérifiée est
+# une décoration, pas une mesure.
+for nsigma, observed, expected in fit.coverage(x, y):
+    print(f"{nsigma:.0f} sigma: {observed:.1%} observé vs {expected:.1%} attendu")
+# 1 sigma : 66,0 % observé vs 68,3 % attendu
+# 2 sigma : 96,2 % observé vs 95,4 % attendu
+# 3 sigma : 99,8 % observé vs 99,7 % attendu
+
+# ---------------------------------------------------------------------
+# 5. Tracer.
+# ---------------------------------------------------------------------
+# nsigma=(1, 2) imbrique deux enveloppes. plot_polyband dessine sur l'axe
+# que vous lui donnez, n'appelle jamais show() ni legend() de lui-même, et
+# renvoie tous les objets graphiques créés pour que vous puissiez les
+# restyler ensuite.
 art = plot_polyband(fit, x, y, nsigma=(1, 2))
 art.ax.legend(handles=art.legend_handles)
 plt.show()</code></pre>
@@ -454,8 +577,21 @@ plt.show()</code></pre>
       </div>
       <p class="hint l-en">Two lines to check it on your own data:</p>
       <p class="hint l-fr">Deux lignes pour le vérifier sur vos propres données :</p>
-      <pre class="codeblock"><code>for k, obs, exp in fit.coverage(x, y):
-    print(k, obs, exp)</code></pre>
+      <pre class="codeblock l-en"><code># coverage() returns one tuple per level: the level itself, the fraction of
+# your points that actually fell inside, and the fraction a correctly
+# specified Gaussian band would contain. Watch the three lines together:
+# systematic over-coverage at 1 sigma with the 2 and 3 sigma lines on target
+# is the signature of heavier-than-Gaussian tails, which is what nu is for.
+for nsigma, observed, expected in fit.coverage(x, y):
+    print(f"{nsigma:.0f} sigma: {observed:.1%} observed, {expected:.1%} expected")</code></pre>
+      <pre class="codeblock l-fr"><code># coverage() renvoie un tuple par niveau : le niveau lui-même, la fraction de
+# vos points réellement tombés à l'intérieur, et la fraction que contiendrait
+# une enveloppe gaussienne correctement spécifiée. Lisez les trois lignes
+# ensemble : une sur-couverture systématique à 1 sigma alors que 2 et 3 sigma
+# sont justes signale des queues plus lourdes qu'une gaussienne, ce à quoi
+# sert nu.
+for nsigma, observed, expected in fit.coverage(x, y):
+    print(f"{nsigma:.0f} sigma: {observed:.1%} observé, {expected:.1%} attendu")</code></pre>
     </section>
 
     <!-- ── The mathematics ────────────────────────────────────────── -->
@@ -795,13 +931,49 @@ w(z) = (&nu;+1) z<sup>2</sup> / (&nu; + z<sup>2</sup>)
         balayer. Il pénalise les paramètres supplémentaires plus fermement que l'AIC, ce qui
         est souhaitable ici : le mode de défaillance à éviter est un polynôme de largeur assez
         souple pour épouser le bruit.</p>
-      <pre class="codeblock"><code>from polyband import select_orders
+      <pre class="codeblock l-en"><code>from polyband import select_orders
 
+# Fits every combination from (0, 0) up to the two maxima and scores each one.
+# Combinations that fail to fit are skipped rather than raising, so this is
+# safe to point at data you have not inspected yet.
 fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2)
+
+# `fit` is the winner, already fitted and ready to use. No need to refit.
 print(fit.order_mean, fit.order_width)
 
+# `table` is every combination that worked, best first, as
+# (order_mean, order_width, criterion). Look at the runners-up rather than
+# just the winner: if the top few are within about 2 of each other they are
+# a tie, and the simplest of them is the one to keep.
 for order_mean, order_width, bic in table[:5]:
-    print(order_mean, order_width, bic)</code></pre>
+    print(f"order_mean={order_mean} order_width={order_width}  BIC={bic:.1f}")
+
+# Pass criterion="aic" to be more permissive, or any fit_polyband argument
+# (log_y, nu, yerr) to scan under the same assumptions as your final fit.
+fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2, nu=4)</code></pre>
+      <pre class="codeblock l-fr"><code>from polyband import select_orders
+
+# Ajuste toutes les combinaisons de (0, 0) jusqu'aux deux maxima et attribue
+# un score à chacune. Les combinaisons qui échouent sont ignorées plutôt que
+# de lever une exception : on peut donc lancer ceci sur des données non
+# encore inspectées.
+fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2)
+
+# `fit` est le gagnant, déjà ajusté et prêt à l'emploi. Inutile de réajuster.
+print(fit.order_mean, fit.order_width)
+
+# `table` contient toutes les combinaisons ayant fonctionné, meilleure en
+# tête, sous la forme (order_mean, order_width, critère). Regardez les
+# suivants et pas seulement le gagnant : si les premiers sont à moins de 2
+# les uns des autres, c'est une égalité, et c'est le plus simple qu'il faut
+# retenir.
+for order_mean, order_width, bic in table[:5]:
+    print(f"order_mean={order_mean} order_width={order_width}  BIC={bic:.1f}")
+
+# Passez criterion="aic" pour être plus permissif, ou n'importe quel argument
+# de fit_polyband (log_y, nu, yerr) pour balayer sous les mêmes hypothèses
+# que votre ajustement final.
+fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2, nu=4)</code></pre>
       <p class="callout l-en"><strong>Rule of thumb:</strong> treat a BIC difference below about 2
         as a tie and keep the simpler model. An over-flexible width is not a harmless extra
         degree of freedom; it produces a band that wiggles to chase noise and then misstates
@@ -826,9 +998,30 @@ for order_mean, order_width, bic in table[:5]:
         <li><span class="l-en">a <strong>wave</strong> means <code>order_mean</code> is too low</span><span class="l-fr">une <strong>ondulation</strong> signifie que <code>order_mean</code> est trop bas</span></li>
         <li><span class="l-en">heavy tails mean you want <code>nu</code></span><span class="l-fr">des queues lourdes signifient qu'il faut passer à <code>nu</code></span></li>
       </ul>
-      <pre class="codeblock"><code>from polyband import plot_diagnostics
+      <pre class="codeblock l-en"><code>from polyband import plot_diagnostics
 
-plot_diagnostics(fit, x, y)</code></pre>
+# Draws the four panels shown below and returns the figure, so you can
+# restyle or save it. Non-finite residuals are dropped for you.
+fig = plot_diagnostics(fit, x, y)
+fig.savefig("diagnostics.pdf")
+
+# The same residuals as raw numbers, if you would rather test than look.
+z = fit.zscore(x, y)
+print(z.std())            # should be close to 1 by construction
+print(abs(z).max())       # your most extreme point, in local sigma</code></pre>
+      <pre class="codeblock l-fr"><code>from polyband import plot_diagnostics
+
+# Trace les quatre panneaux montrés ci-dessous et renvoie la figure, que vous
+# pouvez donc restyler ou enregistrer. Les résidus non finis sont écartés
+# automatiquement.
+fig = plot_diagnostics(fit, x, y)
+fig.savefig("diagnostics.pdf")
+
+# Les mêmes résidus sous forme de nombres, si vous préférez tester plutôt
+# que regarder.
+z = fit.zscore(x, y)
+print(z.std())            # doit être proche de 1 par construction
+print(abs(z).max())       # votre point le plus extrême, en sigma local</code></pre>
     </section>
 
     <!-- ── Underfit width ─────────────────────────────────────────── -->
@@ -1172,7 +1365,26 @@ u<sub>i</sub> = (&nu; + 1) / (&nu; + z<sub>i</sub><sup>2</sup>)<br>
         milieu comme la déflation à annuler si vous voulez un écart-type, et celle de droite comme
         le <code>nsigma</code> à demander si vous voulez un intervalle à 68,3&nbsp;%. Mieux encore,
         mesurez-la sur vos propres données, ce qui tient en une ligne :</p>
-      <pre class="codeblock"><code>print(fit.coverage(x, y, nsigma=(1.19, 2, 3)))</code></pre>
+      <pre class="codeblock l-en"><code># With nu set, one fitted width is no longer a 68% interval. Ask coverage()
+# what multiple actually is, on your own data rather than from the table.
+robust = fit_polyband(x, y, 2, 1, nu=4)
+
+for nsigma, observed, expected in robust.coverage(x, y, nsigma=(1.0, 1.19, 2.0)):
+    print(f"{nsigma:.2f} x width: {observed:.1%} inside")
+
+# Then use that multiple everywhere you want a 1-sigma-equivalent band.
+lo, hi = robust.envelope(robust.grid(), nsigma=1.19)</code></pre>
+      <pre class="codeblock l-fr"><code># Avec nu défini, une largeur ajustée n'est plus un intervalle à 68 %.
+# Demandez à coverage() quel multiple l'est réellement, sur vos propres
+# données plutôt que d'après le tableau.
+robust = fit_polyband(x, y, 2, 1, nu=4)
+
+for nsigma, observed, expected in robust.coverage(x, y, nsigma=(1.0, 1.19, 2.0)):
+    print(f"{nsigma:.2f} x largeur : {observed:.1%} à l'intérieur")
+
+# Utilisez ensuite ce multiple partout où vous voulez une enveloppe
+# équivalente à 1 sigma.
+lo, hi = robust.envelope(robust.grid(), nsigma=1.19)</code></pre>
     </section>
 
     <section class="card">
@@ -1368,22 +1580,61 @@ u<sub>i</sub> = (&nu; + 1) / (&nu; + z<sub>i</sub><sup>2</sup>)<br>
         <code>legend()</code> de lui-même, et renvoie tous les objets graphiques qu'il a créés.
         On peut donc l'appeler deux fois sur le même axe, ce qui est la façon de superposer deux
         ajustements.</p>
-      <pre class="codeblock"><code>art = plot_polyband(
-    fit, x, y, ax=ax,
-    nsigma=(1, 2, 3),                     # nested bands
-    color="#c77dff",
-    point_kw=dict(s=14, marker="^"),      # forwarded to ax.scatter
-    trend_kw=dict(linewidth=3.0),         # forwarded to ax.plot
-    band_kw=dict(hatch="//"),             # forwarded to ax.fill_between
-    show_trend_error=True,
+      <pre class="codeblock l-en"><code>fig, ax = plt.subplots(figsize=(9, 5))
+
+art = plot_polyband(
+    fit, x, y, ax=ax,                     # ax is yours; nothing global is touched
+    nsigma=(1, 2, 3),                     # three nested bands, widest most transparent
+    color="#c77dff",                      # trend and bands
+    point_kw=dict(s=14, marker="^"),      # forwarded verbatim to ax.scatter
+    trend_kw=dict(linewidth=3.0),         # forwarded verbatim to ax.plot
+    band_kw=dict(hatch="//"),             # forwarded verbatim to ax.fill_between
+    show_trend_error=True,                # add the (much narrower) error on the curve
 )
 
-art.trend.set_zorder(10)                  # restyle afterwards
-ax.legend(handles=art.legend_handles)
+# Everything it drew comes back, so restyle after the fact instead of
+# passing more arguments in.
+art.trend.set_zorder(10)
+art.points.set_alpha(0.15)
+ax.legend(handles=art.legend_handles)     # it never calls legend() itself
 
-# Overlay a second fit on the same axis
+# Call it twice on the same axis to overlay a second fit. show_points=False
+# stops the scatter being drawn again on top of itself.
 plot_polyband(robust_fit, ax=ax, show_points=False,
-              color="tab:green", label_prefix="Student-t: ")</code></pre>
+              color="tab:green", label_prefix="Student-t: ")
+
+# Curves stop where the data stop. Ask for an extension deliberately, and
+# style it so the reader can see it is an extrapolation.
+plot_polyband(fit, ax=ax, show_points=False, extrapolate=0.15,
+              trend_kw=dict(linestyle=":"), labels=False)</code></pre>
+      <pre class="codeblock l-fr"><code>fig, ax = plt.subplots(figsize=(9, 5))
+
+art = plot_polyband(
+    fit, x, y, ax=ax,                     # l'axe est le vôtre, rien de global n'est touché
+    nsigma=(1, 2, 3),                     # trois enveloppes imbriquées, la plus large la plus transparente
+    color="#c77dff",                      # tendance et enveloppes
+    point_kw=dict(s=14, marker="^"),      # transmis tel quel à ax.scatter
+    trend_kw=dict(linewidth=3.0),         # transmis tel quel à ax.plot
+    band_kw=dict(hatch="//"),             # transmis tel quel à ax.fill_between
+    show_trend_error=True,                # ajoute l'erreur (bien plus étroite) sur la courbe
+)
+
+# Tout ce qui a été dessiné est renvoyé : restylez après coup plutôt que de
+# passer davantage d'arguments.
+art.trend.set_zorder(10)
+art.points.set_alpha(0.15)
+ax.legend(handles=art.legend_handles)     # la fonction n'appelle jamais legend() elle-même
+
+# Appelez-la deux fois sur le même axe pour superposer un second ajustement.
+# show_points=False évite de redessiner le nuage par-dessus lui-même.
+plot_polyband(robust_fit, ax=ax, show_points=False,
+              color="tab:green", label_prefix="Student-t: ")
+
+# Les courbes s'arrêtent où s'arrêtent les données. Demandez une extension
+# délibérément, et stylez-la pour que le lecteur voie qu'il s'agit d'une
+# extrapolation.
+plot_polyband(fit, ax=ax, show_points=False, extrapolate=0.15,
+              trend_kw=dict(linestyle=":"), labels=False)</code></pre>
       <p class="hint l-en">Curves stop exactly where the data stop. A polynomial band has no
         business being drawn where nothing constrains it, so <code>extrapolate</code> defaults
         to 0 and any extension is something you have to ask for deliberately.</p>

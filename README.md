@@ -56,17 +56,70 @@ plotting helpers.
 
 ## Quick start
 
+Copy the whole block and run it: it builds its own data, so it works before
+you have plugged in yours. The printed values are what you should see.
+
 ```python
+import numpy as np
 import matplotlib.pyplot as plt
 from polyband import fit_polyband, plot_polyband
 
+# ---------------------------------------------------------------------
+# 1. The data. Replace this whole block with your own x and y.
+# ---------------------------------------------------------------------
+rng = np.random.default_rng(0)
+
+# 400 points spread over the x range you care about.
+x = rng.uniform(0, 10, 400)
+
+# The curve the points scatter around: a parabola that bends back down.
+trend = 3.0 + 1.1 * x - 0.075 * x**2
+
+# How wide that scatter is. The point of the package is that this is NOT a
+# constant: it grows from 0.30 at x = 0 to 4.95 at x = 10. A single global
+# RMS would be wrong at both ends at once.
+sigma = np.exp(-1.2 + 0.28 * x)
+
+# One draw per point, each from its own local sigma.
+y = trend + rng.normal(0.0, sigma)
+
+# ---------------------------------------------------------------------
+# 2. The fit. Two degrees, chosen independently of each other.
+# ---------------------------------------------------------------------
+#   order_mean=2  : the trend is a parabola, so degree 2.
+#   order_width=1 : sigma is an exponential of x, so ln(sigma) is a
+#                   straight line, so degree 1.
+# Both polynomials are fitted at the same time by maximum likelihood, which
+# is what lets the trend be weighted by the local scatter.
 fit = fit_polyband(x, y, order_mean=2, order_width=1)
 
-print(fit.summary())
-print(fit.predict(5.0))       # trend at x = 5
-print(fit.scatter(5.0))       # half-width of the 1-sigma band at x = 5
-print(fit.zscore(5.0, 12.3))  # how unusual a point is, in sigma
+# ---------------------------------------------------------------------
+# 3. Reading the result.
+# ---------------------------------------------------------------------
+print(fit.summary())          # degrees, N, x range, log L, AIC and BIC
 
+print(fit.predict(5.0))       # the trend at x = 5              -> 6.610
+print(fit.scatter(5.0))       # half-width of the 1-sigma band  -> 1.234
+print(fit.envelope(5.0))      # the two band edges at x = 5     -> (5.376, 7.844)
+print(fit.zscore(5.0, 12.3))  # is y = 12.3 unusual at x = 5?   -> 4.61 sigma
+
+# ---------------------------------------------------------------------
+# 4. Check it before you trust it.
+# ---------------------------------------------------------------------
+# About 68% of the points belong inside the 1-sigma band and 95% inside 2
+# sigma. A band nobody has checked is decoration, not a measurement.
+for nsigma, observed, expected in fit.coverage(x, y):
+    print(f"{nsigma:.0f} sigma: {observed:.1%} observed vs {expected:.1%} expected")
+# 1 sigma: 66.0% observed vs 68.3% expected
+# 2 sigma: 96.2% observed vs 95.4% expected
+# 3 sigma: 99.8% observed vs 99.7% expected
+
+# ---------------------------------------------------------------------
+# 5. Draw it.
+# ---------------------------------------------------------------------
+# nsigma=(1, 2) nests two bands. plot_polyband draws on the axis you give it,
+# never calls show() or legend() itself, and hands back every artist it
+# created so you can restyle afterwards.
 art = plot_polyband(fit, x, y, nsigma=(1, 2))
 art.ax.legend(handles=art.legend_handles)
 plt.show()
@@ -82,8 +135,15 @@ Not sure which degrees to use? Let BIC decide:
 ```python
 from polyband import select_orders
 
+# Fits every combination from (0, 0) up to the two maxima and scores each.
+# `fit` is the winner, already fitted; `table` is every combination that
+# worked, best first, as (order_mean, order_width, criterion).
 fit, table = select_orders(x, y, max_order_mean=4, max_order_width=2)
 print(fit.order_mean, fit.order_width)
+
+# Look at the runners-up, not just the winner.
+for order_mean, order_width, bic in table[:5]:
+    print(f"order_mean={order_mean} order_width={order_width}  BIC={bic:.1f}")
 ```
 
 Treat a BIC difference below about 2 as a tie and keep the simpler model.

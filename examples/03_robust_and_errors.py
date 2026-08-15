@@ -25,7 +25,22 @@ fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8))
 # ----------------------------------------------------------------------
 # Case 1: outliers
 # ----------------------------------------------------------------------
+# 9% of these 600 points are drawn from a component six times broader. The
+# clean component has a constant width of 0.60, which is what a robust fit
+# should recover; the standard deviation of the full sample is not that
+# number and is not what you want.
 contaminated = make_heavy_tails(n=600, seed=1, contamination=0.09)
+
+# Same data, same degrees, one argument apart. Under the Gaussian the far
+# points enter the width equation as z^2, which is unbounded, so a handful of
+# them set the width for the whole x range. nu=4 replaces that by a weight
+# that saturates: a point at 10 sigma counts 4.8 instead of 100, so it can no
+# longer dictate the answer.
+#
+# The cost, worth knowing: a Student-t width is a scale parameter, not a
+# standard deviation. On clean Gaussian data nu=4 returns about 0.83 of the
+# true sd, so do not read envelope(x, 1) as a 68% interval without checking
+# coverage() first.
 gaussian = fit_polyband(contaminated.x, contaminated.y, 2, 0)
 robust = fit_polyband(contaminated.x, contaminated.y, 2, 0, nu=4)
 
@@ -47,8 +62,20 @@ axes[0].set_ylabel("y")
 # ----------------------------------------------------------------------
 # Case 2: known measurement errors
 # ----------------------------------------------------------------------
+# Each point carries its own uncertainty, growing with x. The spread you can
+# see is the intrinsic spread and the measurement noise added in quadrature:
+#     observed^2 = intrinsic^2 + yerr^2
+# Usually it is the intrinsic part you want to describe, since the
+# measurement part says more about your instrument than about the population.
 measured = make_with_errors(n=1500, seed=3)
+
+# Without yerr the band absorbs both terms and reports the observed spread.
 naive = fit_polyband(measured.x, measured.y, 1, 0)
+
+# With yerr the sum above is done inside the likelihood, per point, so the
+# fitted width is the intrinsic component alone. Note this is a subtraction
+# in disguise: if the error bars are overstated the intrinsic width is driven
+# towards zero, so a suspiciously small answer means check the error bars.
 aware = fit_polyband(measured.x, measured.y, 1, 0, yerr=measured.yerr)
 
 truth = float(measured.true_sigma(np.array([5.0]))[0])
