@@ -288,7 +288,14 @@ def test_one_absurd_point_does_not_break_the_robust_fit(magnitude):
 
     y = data.y.copy()
     y[0] = magnitude
-    fit = fit_polyband(data.x, y, 2, 1, nu=4.0)
+    if magnitude > 1e150:
+        # Past the point where float64 can square the residual, the cap binds
+        # and the fit is required to say so. Asserting it here keeps the
+        # expected warning out of the test report.
+        with pytest.warns(RuntimeWarning, match="double precision"):
+            fit = fit_polyband(data.x, y, 2, 1, nu=4.0)
+    else:
+        fit = fit_polyband(data.x, y, 2, 1, nu=4.0)
 
     assert fit.converged
     assert np.isfinite(fit.scatter(5.0))
