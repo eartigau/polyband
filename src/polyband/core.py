@@ -39,6 +39,7 @@ Three design choices worth knowing about
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -55,9 +56,22 @@ __all__ = ["PolyBandFit", "fit_polyband", "select_orders"]
 
 
 # For z ~ N(0, sigma):  E[ln|z|] = ln(sigma) - (gamma_Euler + ln 2) / 2,
-# the second term being about -0.6352. Used to de-bias the starting guess of
-# the width polynomial, which is a fit to ln|residual|.
+# the second term being about -0.6352.
 _LOG_ABS_NORMAL_OFFSET = -0.5 * (np.euler_gamma + np.log(2.0))
+
+# The starting guess is built from the least deviant _START_TRIM of the points
+# (see _robust_start). Restricted to that subset the expectation above shifts,
+# because the large |z| have been removed: for Gaussian z conditioned on
+# |z| <= q with P(|z| <= q) = 0.70, E[ln|z|] = ln(sigma) - 1.0813. Using the
+# untrimmed constant here would start the width about 36% too narrow.
+_START_TRIM = 0.70
+_LOG_ABS_TRIMMED_OFFSET = -1.0813174
+
+# Squaring a residual larger than about 1.34e154 overflows float64. Capping the
+# residual first keeps the objective finite or +inf, never NaN, which is the
+# difference between an optimiser that steps away from a bad region and one
+# that has nothing to follow.
+_RESID_CAP = 1e150
 
 
 @dataclass
@@ -297,7 +311,14 @@ class PolyBandFit:
 # Likelihood
 # ----------------------------------------------------------------------
 def _neg_log_like(params, design_mean, design_width, y, yvar, nu):
-    """Negative log likelihood of the heteroscedastic polynomial model."""
+    """Negative log likelihood of the heteroscedastic polynomial model.
+
+    Guaranteed to return a float that is either finite or ``+inf``, never NaN.
+    NaN is the one value an optimiser cannot act on: it compares False against
+    everything, so a simplex that lands on it has no direction to move in.
+    ``+inf`` says the same thing usefully, namely that this region is
+    impossible, and the optimiser steps back out of it.
+    """
     n_mean = design_mean.shape[1]
     mu = design_mean @ params[:n_mean]
     # Clipping keeps exp() from overflowing while the optimiser explores.
@@ -305,14 +326,67 @@ def _neg_log_like(params, design_mean, design_width, y, yvar, nu):
     var = np.exp(2.0 * log_sig)
     if yvar is not None:
         var = var + yvar
-    resid2 = (y - mu) ** 2
+    # The cap is a no-op for any residual float64 can square, so ordinary data
+    # goes through the same arithmetic as before, bit for bit. It matters only
+    # for a genuinely absurd point, where it turns an inf-minus-inf NaN into a
+    # plain inf.
+    resid2 = np.clip(y - mu, -_RESID_CAP, _RESID_CAP) ** 2
 
     if nu is None:
-        return 0.5 * float(np.sum(resid2 / var + np.log(var)))
+        value = 0.5 * float(np.sum(resid2 / var + np.log(var)))
+    else:
+        const = (gammaln(0.5 * (nu + 1.0)) - gammaln(0.5 * nu)
+                 - 0.5 * np.log(nu * np.pi))
+        ll = (const - 0.5 * np.log(var)
+              - 0.5 * (nu + 1.0) * np.log1p(resid2 / (nu * var)))
+        value = -float(np.sum(ll))
 
-    const = gammaln(0.5 * (nu + 1.0)) - gammaln(0.5 * nu) - 0.5 * np.log(nu * np.pi)
-    ll = const - 0.5 * np.log(var) - 0.5 * (nu + 1.0) * np.log1p(resid2 / (nu * var))
-    return -float(np.sum(ll))
+    return value if np.isfinite(value) else np.inf
+
+
+def _robust_start(t, y, order_mean: int, order_width: int) -> np.ndarray:
+    """Starting guess that no single point can drag away, however extreme.
+
+    The obvious start, an ordinary least-squares trend followed by a fit to
+    ln|residual|, is unusable here: it is about the least robust estimator
+    available, and its failure is not graceful. One point at 1e16 moves the
+    trend far enough that every residual becomes of order 1e16, so the width
+    guess comes out at ln(sigma) ~ 37. From there the Student-t likelihood is
+    flat, since every standardised residual is negligible, and the optimiser
+    has nothing to follow. It never walks back. The estimator is robust, but
+    only once it is handed somewhere sensible to start.
+
+    So the trend is fitted on the least deviant ``_START_TRIM`` of the points,
+    re-selected a few times, and the scale comes from the median absolute
+    deviation of the survivors. Both are median-like quantities: an arbitrarily
+    large point changes the ordering, never the value.
+
+    All reductions are nan-aware, and ``np.argsort`` sorts NaN to the end, so a
+    non-finite value surviving from upstream is trimmed away first rather than
+    poisoning the whole guess.
+    """
+    n = t.size
+    # Never trim below what either polynomial needs to stay determined.
+    n_keep = min(n, max(int(np.ceil(_START_TRIM * n)),
+                        order_mean + 2, order_width + 2))
+
+    coeff = np.polyfit(t, y, order_mean)
+    keep = np.ones(n, dtype=bool)
+    for _ in range(4):
+        order = np.argsort(np.abs(y - np.polyval(coeff, t)), kind="stable")
+        new = np.zeros(n, dtype=bool)
+        new[order[:n_keep]] = True
+        if np.array_equal(new, keep):
+            break
+        keep = new
+        coeff = np.polyfit(t[keep], y[keep], order_mean)
+
+    resid = (y - np.polyval(coeff, t))[keep]
+    mad = 1.4826 * np.nanmedian(np.abs(resid - np.nanmedian(resid)))
+    floor = 1e-8 * max(float(mad), np.finfo(float).tiny)
+    width = np.polyfit(t[keep], np.log(np.abs(resid) + floor), order_width)
+    width[-1] -= _LOG_ABS_TRIMMED_OFFSET
+    return np.concatenate([coeff, width])
 
 
 def _numeric_hessian(func: Callable, params, args, rel_step: float = 1e-4):
@@ -501,14 +575,7 @@ def fit_polyband(
     design_width = np.vander(t, order_width + 1)
     yvar = None if yerr_used is None else yerr_used ** 2
 
-    # Starting guess: ordinary least squares for the trend, then a fit to
-    # ln|residual| for the width, de-biased by E[ln|z|] - ln(sigma).
-    init_mean = np.polyfit(t, y, order_mean)
-    resid = y - np.polyval(init_mean, t)
-    floor = 1e-8 * max(float(np.std(resid)), 1e-12)
-    init_width = np.polyfit(t, np.log(np.abs(resid) + floor), order_width)
-    init_width[-1] -= _LOG_ABS_NORMAL_OFFSET
-    p0 = np.concatenate([init_mean, init_width])
+    p0 = _robust_start(t, y, order_mean, order_width)
 
     args = (design_mean, design_width, y, yvar, nu)
     nll0 = _neg_log_like(p0, *args)
@@ -524,9 +591,37 @@ def fit_polyband(
     # BFGS routinely reports precision loss when handed an already-converged
     # start, so judge on the objective rather than on the status flag.
     converged = bool(np.isfinite(res.fun) and res.fun <= nll0)
+    if not converged:
+        # Otherwise the only trace is a flag nobody reads and a band that
+        # quietly returns NaN. This happens when the data span a range float64
+        # cannot square, roughly |y - trend| above 1e154.
+        warnings.warn(
+            "polyband: the fit did not converge, so the returned trend and "
+            "band are not trustworthy. This usually means the data contain a "
+            "value too extreme for double precision. Check fit.converged and "
+            f"fit.message ({res.message!r}).",
+            RuntimeWarning, stacklevel=2,
+        )
 
     coeff_mean = np.asarray(res.x[: order_mean + 1], dtype=float).copy()
     coeff_width = np.asarray(res.x[order_mean + 1:], dtype=float).copy()
+
+    # The likelihood clips ln(sigma) to +/-30 and caps residuals at
+    # _RESID_CAP. Both bounds are far outside anything a well-scaled dataset
+    # reaches, so an optimum sitting against one is the edge of double
+    # precision rather than the maximum likelihood estimate. Unlike x, y is
+    # not rescaled internally, so this is reachable with perfectly ordinary
+    # data in awkward units: SI distances of order 1e20, or normalised
+    # quantities of order 1e-14. Silence here would mean a width wrong by a
+    # factor of two with converged=True next to it.
+    if (np.max(np.abs(design_width @ coeff_width)) > 29.0
+            or not np.all(np.abs(y - design_mean @ coeff_mean) < _RESID_CAP)):
+        warnings.warn(
+            "polyband: the fit reached the edge of what double precision can "
+            "represent, so the returned width is not reliable. Rescale y into "
+            "units where the scatter is of order 1 and fit again.",
+            RuntimeWarning, stacklevel=2,
+        )
 
     if dof_correction:
         coeff_width[-1] += 0.5 * np.log(n / (n - n_params))
