@@ -122,6 +122,13 @@ STRINGS = {
         "diag_cov_x": "expected fraction inside",
         "diag_cov_y": "observed fraction inside",
 
+        "orders_under": "too rigid",
+        "orders_right": "correct",
+        "orders_over": "too flexible",
+        "orders_best": "best",
+        "orders_ylab_mean": "y\n\nsweeping the TREND degree\n(width held correct)",
+        "orders_ylab_width": "y\n\nsweeping the WIDTH degree\n(trend held correct)",
+
         "uf_rigid": "order_width=0: too rigid",
         "uf_correct": "order_width=1: correct",
         "uf_inside": "{p}% inside 1$\\sigma$ (expected 68%)",
@@ -217,6 +224,13 @@ STRINGS = {
         "diag_cov_title": "Couverture de l'enveloppe",
         "diag_cov_x": "fraction attendue à l'intérieur",
         "diag_cov_y": "fraction observée à l'intérieur",
+
+        "orders_under": "trop rigide",
+        "orders_right": "correct",
+        "orders_over": "trop souple",
+        "orders_best": "meilleur",
+        "orders_ylab_mean": "y\n\ndegré de la TENDANCE balayé\n(largeur maintenue correcte)",
+        "orders_ylab_width": "y\n\ndegré de la LARGEUR balayé\n(tendance maintenue correcte)",
 
         "uf_rigid": f"order_width=0{NB}: trop rigide",
         "uf_correct": f"order_width=1{NB}: correct",
@@ -390,30 +404,63 @@ def fig_band_vs_error():
 
 # ----------------------------------------------------------------------
 def fig_orders():
-    """What the two orders actually control, shown side by side."""
+    """What each degree controls, swept from too rigid to too flexible.
+
+    One degree is varied per row while the other is held at the value the data
+    were generated with, so each row is a clean one-dimensional sweep. Both
+    rows run past the correct answer on purpose: the interesting failure is
+    not only the band that cannot bend, it is also the band that bends to
+    follow noise, and BIC turns back up in both directions.
+    """
     data = make_trumpet(n=350, seed=0)
-    combos = [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]
+    # (which degree is swept, the value the data were generated with, combos)
+    rows = [
+        ("mean", 2, [(0, 1), (1, 1), (2, 1), (9, 1)]),
+        ("width", 1, [(2, 0), (2, 1), (2, 2), (2, 8)]),
+    ]
+    best = fit_polyband(data.x, data.y, 2, 1).bic
 
-    fig, axes = plt.subplots(2, 3, figsize=(12.0, 6.4), sharex=True, sharey=True)
-    for ax, (om, ow) in zip(axes.ravel(), combos):
-        fit = fit_polyband(data.x, data.y, order_mean=om, order_width=ow)
-        grid = fit.grid()
-        ax.scatter(data.x, data.y, s=12, alpha=0.35, color=MUTED, linewidths=0)
-        lo, hi = fit.envelope(grid)
-        ax.fill_between(grid, lo, hi, color=ACCENT, alpha=0.20, linewidth=0)
-        ax.plot(grid, fit.predict(grid), color=ACCENT, linewidth=2.0)
-        ax.plot(grid, data.true_mean(grid), color=TRUTH, linestyle="--",
-                linewidth=1.2)
-        # Parameter names are code, so they stay in English in both versions.
-        ax.set_title(f"order_mean={om}, order_width={ow}    "
-                     f"BIC={fit.bic:.0f}", fontsize=9.5)
-        for spine in ("top", "right"):
-            ax.spines[spine].set_visible(False)
+    fig, axes = plt.subplots(2, 4, figsize=(14.0, 7.0), sharex=True, sharey=True)
+    for r, (row_key, true_degree, combos) in enumerate(rows):
+        for c, (om, ow) in enumerate(combos):
+            ax = axes[r, c]
+            fit = fit_polyband(data.x, data.y, order_mean=om, order_width=ow)
+            grid = fit.grid()
+            ax.scatter(data.x, data.y, s=12, alpha=0.35, color=MUTED, linewidths=0)
+            lo, hi = fit.envelope(grid)
 
+            varied = om if r == 0 else ow
+            if varied < true_degree:
+                status, colour = T("orders_under"), WARN
+            elif varied == true_degree:
+                status, colour = T("orders_right"), ACCENT
+            else:
+                status, colour = T("orders_over"), VIOLET
+
+            ax.fill_between(grid, lo, hi, color=colour, alpha=0.20, linewidth=0)
+            ax.plot(grid, fit.predict(grid), color=colour, linewidth=2.0)
+            ax.plot(grid, data.true_mean(grid), color=TRUTH, linestyle="--",
+                    linewidth=1.2)
+            for sign in (-1, 1):
+                ax.plot(grid, data.true_mean(grid)
+                        + sign * data.true_sigma(grid),
+                        color=TRUTH, linestyle=":", linewidth=1.0)
+
+            delta = fit.bic - best
+            tag = (T("orders_best") if abs(delta) < 0.05
+                   else f"{delta:+.0f}".replace("+", "+"))
+            # Parameter names are code, so they stay in English in both versions.
+            ax.set_title(f"order_mean={om}, order_width={ow}\n"
+                         f"{status}   BIC={fit.bic:.0f}  ({tag})",
+                         fontsize=9.0, color=colour)
+            for spine in ("top", "right"):
+                ax.spines[spine].set_visible(False)
+
+    axes[0, 0].set_ylim(-2.0, 14.0)
     for ax in axes[-1]:
         ax.set_xlabel("x")
-    for ax in axes[:, 0]:
-        ax.set_ylabel("y")
+    axes[0, 0].set_ylabel(T("orders_ylab_mean"), fontsize=9.5)
+    axes[1, 0].set_ylabel(T("orders_ylab_width"), fontsize=9.5)
     save(fig, "orders")
 
 

@@ -949,25 +949,33 @@ w(z) = (&nu;+1) z<sup>2</sup> / (&nu; + z<sup>2</sup>)
     <!-- ── Orders ─────────────────────────────────────────────────── -->
     <section class="card span-3">
       <h2><span class="l-en">What the two degrees control</span><span class="l-fr">Ce que contrôlent les deux degrés</span></h2>
-      <p class="l-en">The same 350 points, fitted with every combination of a trend degree from
-        0 to 2 and a width degree of 0 or 1. Along a row the trend gets more flexible; between
-        rows the band does. The dashed green curve is the true trend.</p>
-      <p class="l-fr">Les mêmes 350 points, ajustés avec toutes les combinaisons d'un degré de
-        tendance de 0 à 2 et d'un degré de largeur de 0 ou 1. Sur une rangée, la tendance
-        gagne en souplesse ; d'une rangée à l'autre, c'est l'enveloppe. La courbe verte
-        pointillée est la tendance vraie.</p>
+      <p class="l-en">Each row sweeps one degree while the other is held at the value the data
+        were generated with, so each is a clean one-dimensional experiment. Both rows run past
+        the correct answer on purpose: too few degrees is not the only way to be wrong.</p>
+      <p class="l-fr">Chaque rangée balaie un degré pendant que l'autre est maintenu à la valeur
+        ayant servi à générer les données : chacune est donc une expérience proprement
+        unidimensionnelle. Les deux rangées dépassent volontairement la bonne réponse, car
+        manquer de degrés n'est pas la seule façon de se tromper.</p>
       <figure class="fig">
-        <img data-fig="orders" src="figures/en/orders.svg" loading="lazy" alt="Grid of fits for six combinations of the two polynomial degrees" />
+        <img data-fig="orders" src="figures/en/orders.svg" loading="lazy" alt="Two rows of four fits, each sweeping one polynomial degree from too rigid through correct to too flexible" />
         <figcaption>
-          <span class="l-en">BIC is quoted on each panel, lower being better. It picks
-            order_mean = 2 and order_width = 1, which is exactly how the data were generated.
-            Note that the top row, with a constant-width band, is wrong in both directions at
-            once: too wide on the left, too narrow on the right.</span>
-          <span class="l-fr">Le BIC est indiqué sur chaque panneau, le plus bas étant le meilleur.
-            Il retient order_mean = 2 et order_width = 1, soit exactement la façon dont les
-            données ont été générées. Notez que la rangée du haut, avec une enveloppe de largeur
-            constante, se trompe dans les deux sens à la fois : trop large à gauche, trop
-            étroite à droite.</span>
+          <span class="l-en">350 points. Green shows the truth: dashed for the trend, dotted for
+            the 1&sigma; width. BIC falls to 574 at the degrees the data were generated with and
+            climbs again on the far side, by 36 for a degree-9 trend and by 34 for a degree-8
+            width. Look at how little those two panels appear to be wrong. At this sample size
+            the surplus degrees buy a wiggle you would have trouble spotting by eye, which is
+            exactly why the criterion is worth consulting and the picture is not enough. Note
+            also the first panel of the bottom row, where a constant-width band is wrong in both
+            directions at once: too wide on the left, too narrow on the right.</span>
+          <span class="l-fr">350 points. Le vert indique la vérité : tirets pour la tendance,
+            pointillés pour la largeur à 1&sigma;. Le BIC descend à 574 aux degrés ayant généré
+            les données, puis remonte de l'autre côté, de 36 pour une tendance de degré 9 et de
+            34 pour une largeur de degré 8. Observez à quel point ces deux panneaux semblent peu
+            fautifs. À cette taille d'échantillon, les degrés excédentaires n'achètent qu'une
+            ondulation difficile à repérer à l'œil, et c'est précisément pourquoi il vaut la
+            peine de consulter le critère : l'image ne suffit pas. Notez aussi le premier
+            panneau de la rangée du bas, où une enveloppe de largeur constante se trompe dans
+            les deux sens à la fois : trop large à gauche, trop étroite à droite.</span>
         </figcaption>
       </figure>
     </section>
