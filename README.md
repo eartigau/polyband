@@ -43,7 +43,20 @@ mean than points in the quiet part.
 pip install git+https://github.com/eartigau/polyband.git
 ```
 
-Or, to work on it locally:
+That installs whatever is on `main` at the moment you run it. For anything
+you need to reproduce later, pin a released version instead:
+
+```bash
+pip install "git+https://github.com/eartigau/polyband.git@v0.2.0"
+```
+
+Requires Python 3.9+, numpy and scipy. matplotlib is needed only for the
+plotting helpers.
+
+### Contributors only
+
+This is not the way to install polyband for use. It is only for changing
+polyband itself:
 
 ```bash
 git clone https://github.com/eartigau/polyband.git
@@ -52,8 +65,15 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Requires Python 3.9+, numpy and scipy. matplotlib is needed only for the
-plotting helpers.
+**One trap worth knowing.** `pip install -e` silently replaces any other
+installation of polyband in the same environment, including an editable one
+pointing at a different folder. Clone it twice and `import polyband` quietly
+follows whichever you installed last, so you can edit one copy and test the
+other without noticing. If you are unsure which one is live:
+
+```bash
+python -c "import polyband; print(polyband.__file__)"
+```
 
 ## Quick start
 

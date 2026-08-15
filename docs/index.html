@@ -278,14 +278,35 @@
       <p class="l-fr">Une seule commande, directement depuis GitHub. Python 3.9 ou plus récent,
         avec numpy et scipy ; matplotlib n'est requis que pour les fonctions de tracé.</p>
       <pre class="codeblock wrap"><code>pip install git+https://github.com/eartigau/polyband.git</code></pre>
-      <p class="hint l-en">To work on the code itself, clone it and install in editable mode
-        with the test dependencies:</p>
-      <p class="hint l-fr">Pour travailler sur le code lui-même, clonez le dépôt et installez-le
-        en mode éditable avec les dépendances de test :</p>
+      <p class="hint l-en">That installs whatever is on <code>main</code> at the moment you run
+        it. For anything you need to reproduce later, pin a released version instead:</p>
+      <p class="hint l-fr">Cette commande installe l'état de <code>main</code> au moment où vous
+        la lancez. Pour tout ce que vous devrez reproduire plus tard, épinglez plutôt une version
+        publiée :</p>
+      <pre class="codeblock wrap"><code>pip install "git+https://github.com/eartigau/polyband.git@v0.2.0"</code></pre>
+
+      <p class="kicker" style="margin-top:18px"><span class="l-en">Contributors only</span><span class="l-fr">Pour les contributeurs seulement</span></p>
+      <p class="hint l-en">This is not the way to install polyband for use. It is only for
+        changing polyband itself:</p>
+      <p class="hint l-fr">Ce n'est pas la façon d'installer polyband pour s'en servir. C'est
+        uniquement pour modifier polyband lui-même :</p>
       <pre class="codeblock wrap"><code>git clone https://github.com/eartigau/polyband.git
 cd polyband
 pip install -e ".[dev]"
 pytest</code></pre>
+      <p class="callout hint l-en"><strong>One trap worth knowing.</strong> <code>pip install
+        -e</code> silently replaces any other installation of polyband in the same environment,
+        including an editable one pointing at a different folder. Clone it twice and
+        <code>import polyband</code> quietly follows whichever you installed last, so you can
+        edit one copy and test the other without noticing. If you are unsure which one is live:
+        <code>python -c "import polyband; print(polyband.__file__)"</code>.</p>
+      <p class="callout hint l-fr"><strong>Un piège à connaître.</strong> <code>pip install
+        -e</code> remplace silencieusement toute autre installation de polyband dans le même
+        environnement, y compris une installation éditable pointant vers un autre dossier. Si
+        vous clonez deux fois, <code>import polyband</code> suit sans rien dire celle installée
+        en dernier : vous pouvez donc modifier une copie et tester l'autre sans vous en
+        apercevoir. En cas de doute sur celle qui est active :
+        <code>python -c "import polyband; print(polyband.__file__)"</code>.</p>
     </section>
 
     <!-- ── Quick start ────────────────────────────────────────────── -->
