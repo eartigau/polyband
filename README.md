@@ -45,13 +45,27 @@ sidebar will give you BibTeX and APA directly.
 
 ```
 Artigau, E. (2026). polyband: polynomial regression for the mean relation
-and for its scatter envelope (version 0.2.0).
-https://github.com/eartigau/polyband
+and for its scatter envelope. Zenodo. https://doi.org/10.5281/zenodo.21954183
 ```
 
-A DOI is on the way through Zenodo; once minted it will appear here and in
-`CITATION.cff`, and it is the identifier to prefer, since it points at a
-frozen archived copy rather than at a branch that keeps moving.
+```bibtex
+@software{polyband,
+  author    = {Artigau, Etienne},
+  title     = {polyband: polynomial regression for the mean relation
+               and for its scatter envelope},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.21954183},
+  url       = {https://github.com/eartigau/polyband}
+}
+```
+
+Two DOIs exist and they answer different questions.
+[`10.5281/zenodo.21954183`](https://doi.org/10.5281/zenodo.21954183) is the **concept DOI**: it always
+resolves to the most recent version, and it is the one to put in a README or
+a footnote. [`10.5281/zenodo.21954184`](https://doi.org/10.5281/zenodo.21954184) is the **version DOI**
+for 0.2.0 specifically, and it is the one to cite in a paper, because it
+resolves to a frozen archive of the exact code that produced your numbers.
 
 ## Install
 

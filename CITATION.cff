@@ -17,6 +17,15 @@ authors:
     orcid: "https://orcid.org/0000-0003-3506-5667"
     affiliation: Université de Montréal
 version: 0.2.0
+date-released: "2026-08-15"
+doi: 10.5281/zenodo.21954183
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21954183
+    description: Concept DOI, always resolving to the latest version
+  - type: doi
+    value: 10.5281/zenodo.21954184
+    description: Archived snapshot of version 0.2.0
 license: MIT
 repository-code: "https://github.com/eartigau/polyband"
 url: "https://eartigau.github.io/polyband/"
