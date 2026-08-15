@@ -1,4 +1,5 @@
-"""Joint maximum-likelihood fitting of a polynomial trend and a polynomial band.
+"""Joint maximum-likelihood polynomial regression of a mean relation and its
+scatter envelope.
 
 The model
 ---------
@@ -433,7 +434,7 @@ def fit_polyband(
     n_bootstrap: int = 0,
     random_state: Optional[int] = None,
 ) -> PolyBandFit:
-    """Fit a polynomial trend and a polynomial-width band to ``(x, y)``.
+    """Regress a mean relation and its scatter envelope on ``(x, y)``.
 
     Parameters
     ----------

@@ -1,7 +1,8 @@
-"""polyband: a polynomial trend with a polynomial-width band.
+"""polyband: polynomial regression for the mean relation and for its scatter.
 
-Fit a smooth trend through a scatter plot *and* a smooth description of how
-wide the scatter is around it, with the degree of each polynomial chosen
+A polynomial regression that determines two curves at once: the mean
+relation running through a scatter plot, and the envelope describing how
+wide the scatter around it is, with the degree of each polynomial chosen
 independently.
 
 Quick start
